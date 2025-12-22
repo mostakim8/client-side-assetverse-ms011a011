@@ -12,7 +12,12 @@ import AddEmployee from "../pages/AddEmployee";
 import UpgradePackage from "../pages/UpgradePackage";
 import Profile from "../pages/Profile";
 import HRHome from "../pages/HRHome";
-import HrRoute from "../hooks/HrRoute"; // HrRoute ইম্পোর্ট করুন
+import HrRoute from "../hooks/HrRoute"; 
+import MyAssets from "../pages/MyAssets";
+import EmployeeRoute from "../hooks/EmployeeRoute"; 
+import MyTeam from "../pages/MyTeam";
+import RequestAsset from "../pages/RequestAsset";
+import EmployeeHome from "../pages/EmployeeHome";
 
 const router = createBrowserRouter([
   {
@@ -36,7 +41,7 @@ const router = createBrowserRouter([
         element: <Login />,
       },
 
-      // HR Protected Routes (সবগুলো HrRoute দিয়ে র‍্যাপ করা হয়েছে)
+      // HR Protected Routes 
       {
         path: "hr-home",
         element: <HrRoute><HRHome /></HrRoute>
@@ -65,8 +70,23 @@ const router = createBrowserRouter([
         path: "upgrade-package",
         element: <HrRoute><UpgradePackage /></HrRoute>
       },
-      
-      // প্রোফাইল সবার জন্য হতে পারে, তবে চাইলে এটিকেও প্রোটেক্টেড রাখতে পারেন
+      //employee protected routes 
+{
+  path: "employee-home",
+  element: <EmployeeRoute><EmployeeHome /></EmployeeRoute>
+},
+      {
+        path: "my-assets",
+        element: <EmployeeRoute><MyAssets /></EmployeeRoute>
+      },
+       {
+        path: "my-team",
+        element: <EmployeeRoute><MyTeam /></EmployeeRoute>
+      },
+      {
+        path: "request-asset",
+        element: <EmployeeRoute><RequestAsset /></EmployeeRoute>
+      },
       {
         path: "profile",
         element: <Profile />

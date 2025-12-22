@@ -13,6 +13,5 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// auth এবং app দুইটাই এক্সপোর্ট করুন যেন অন্য ফাইলে পাওয়া যায়
 export const auth = getAuth(app);
 export { app };

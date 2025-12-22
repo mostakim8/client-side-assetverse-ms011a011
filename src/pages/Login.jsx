@@ -10,18 +10,25 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     
-    // after login redirect to the page where user came from
     const from = location.state?.from?.pathname || "/";
 
     const onSubmit = async (data) => {
         try {
-            // login firebase
-            await signIn(data.email, data.password);
+            const result = await signIn(data.email, data.password);
+            const loggedUser = result.user;
+
+            // Jwt token from server 
+            const userInfo = { email: loggedUser.email };
+            const resToken = await axios.post('http://localhost:5001/jwt', userInfo);
             
-            // ২. verify user role from backend
-            const res = await axios.get(`http://localhost:5001/users/role/${data.email}`);
+            if (resToken.data.token) {
+                // save the token to local storage
+                localStorage.setItem('access-token', resToken.data.token);
+                console.log("Token saved successfully");
+            }
+            const resRole = await axios.get(`http://localhost:5001/users/role/${data.email}`);
             
-            if (res.data) {
+            if (resRole.data) {
                 Swal.fire({
                     title: "Success",
                     text: "Login Successful!",
@@ -29,10 +36,24 @@ const Login = () => {
                     timer: 1500,
                     showConfirmButton: false
                 });
-                
-                // direct to home page
                 navigate(from, { replace: true });
             }
+        } catch (error) {
+            console.error(error);
+            Swal.fire("Error", "Invalid Email or Password", "error");
+        }
+    };
+
+    const handleGoogleSignIn = async () => {
+        try {
+            const result = await googleSignIn();
+            const userInfo = { email: result.user?.email };
+            
+            const res = await axios.post('http://localhost:5001/jwt', userInfo);
+            if (res.data.token) {
+                localStorage.setItem('access-token', res.data.token);
+            }
+            navigate(from, { replace: true });
         } catch (error) {
             Swal.fire("Error", error.message, "error");
         }
@@ -59,7 +80,7 @@ const Login = () => {
                 <div className="divider my-6 text-gray-400 font-bold uppercase text-xs">OR</div>
                 
                 <button 
-                    onClick={() => googleSignIn().then(() => navigate(from))} 
+                    onClick={handleGoogleSignIn} 
                     className="w-full border-2 border-gray-200 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95"
                 >
                     <img className="w-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
@@ -67,7 +88,7 @@ const Login = () => {
                 </button>
                 
                 <p className="mt-6 text-center text-sm text-gray-600 font-medium">
-                    New here? <span className="text-blue-600 font-bold">Register as Employee or HR</span>
+                    New here? <span className="text-blue-600 font-bold underline cursor-pointer">Register</span>
                 </p>
             </div>
         </div>

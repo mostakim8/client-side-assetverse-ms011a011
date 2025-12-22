@@ -1,13 +1,13 @@
 import { Navigate, useLocation } from "react-router-dom";
-import useAuth from "./UseAuth"; // আপনার পাথ অনুযায়ী ইম্পোর্ট করুন
-import UseRole from "./UseRole"; // আপনার পাথ অনুযায়ী ইম্পোর্ট করুন
+import useAuth from "./UseAuth"; 
+import UseRole from "./UseRole"; 
 
 const HrRoute = ({ children }) => {
     const { user, loading } = useAuth();
     const [role, isRoleLoading] = UseRole();
     const location = useLocation();
 
-    // ডাটা লোড হওয়ার সময় লোডিং স্পিনার দেখাবে
+    // show loading spinner while checking auth and role
     if (loading || isRoleLoading) {
         return (
             <div className="flex justify-center items-center h-screen">
@@ -16,12 +16,12 @@ const HrRoute = ({ children }) => {
         );
     }
 
-    // ইউজার যদি লগইন থাকে এবং তার রোল যদি 'hr' হয়, তবেই তাকে পেজে ঢুকতে দিবে
+    // if user is logged in and role is hr, allow access to the route
     if (user && role === 'hr') {
         return children;
     }
 
-    // যদি সে HR না হয়, তবে তাকে হোমপেজে পাঠিয়ে দিবে
+    // if not authorized, redirect to home page
     return <Navigate to="/" state={{ from: location }} replace />;
 };
 

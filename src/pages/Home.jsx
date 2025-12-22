@@ -43,7 +43,7 @@ const Home = () => {
                     </p>
                     {user && (
                         <div className="bg-white/20 backdrop-blur-md inline-block px-6 py-3 rounded-2xl border border-white/30">
-                            <span className="text-xl font-semibold">Welcome back, {user?.displayName}! 👋</span>
+                            <span className="text-xl font-semibold">Welcome back, {user?.displayName}! </span>
                         </div>
                     )}
                 </div>

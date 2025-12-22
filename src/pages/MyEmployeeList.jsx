@@ -1,16 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import useAuth from "../hooks/UseAuth";
-import { FaUserSlash } from "react-icons/fa";
+import useAxiosSecure from "../hooks/useAxiosSecure"; 
 import Swal from "sweetalert2";
 
 const MyEmployeeList = () => {
     const { user } = useAuth();
+    const axiosSecure = useAxiosSecure(); 
 
     const { data: employees = [], refetch, isLoading } = useQuery({
         queryKey: ['my-employees', user?.email],
+        enabled: !!user?.email,
         queryFn: async () => {
-            const res = await axios.get(`http://localhost:5001/my-employees/${user?.email}`);
+            const res = await axiosSecure.get(`/my-employees/${user?.email}`);
             return res.data;
         }
     });
@@ -18,65 +19,79 @@ const MyEmployeeList = () => {
     const handleRemove = (id) => {
         Swal.fire({
             title: "Are you sure?",
-            text: "Employee will be removed from your company!",
+            text: "Employee will be removed from your company and team!",
             icon: "warning",
             showCancelButton: true,
+            confirmButtonColor: "#d33",
+            cancelButtonColor: "#3085d6",
             confirmButtonText: "Yes, Remove"
         }).then(async (result) => {
             if (result.isConfirmed) {
-                const res = await axios.patch(`http://localhost:5001/employees/remove/${id}`);
-                if (res.data.modifiedCount > 0) {
-                    Swal.fire("Removed!", "Employee removed successfully.", "success");
-                    refetch();
+                try {
+                    const res = await axiosSecure.patch(`/employees/remove/${id}`);
+                    if (res.data.modifiedCount > 0) {
+                        Swal.fire("Removed!", "Employee removed successfully.", "success");
+                        refetch();
+                    }
+                } catch (error) {
+                    Swal.fire("Error", "Could not remove employee.", "error");
                 }
             }
         });
     };
 
     return (
-        <div className="p-8 pt-24 min-h-screen bg-gray-50">
-            <div className="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-sm border">
-                <h2 className="text-3xl font-black mb-8 border-l-4 border-blue-600 pl-4">Team Members</h2>
+        <div className="p-4 md:p-8 pt-24 min-h-screen bg-gray-50">
+            <div className="max-w-7xl mx-auto bg-white p-8 rounded-4xl shadow-sm border border-gray-100">
+                <div className="mb-8">
+                    <h2 className="text-3xl font-black text-gray-800 border-l-8 border-blue-600 pl-4 uppercase tracking-tighter">My Team Members</h2>
+                    <p className="text-gray-500 mt-1 font-medium">Manage and monitor your current employees.</p>
+                </div>
                 
-                <div className="overflow-x-auto rounded-xl border border-gray-100">
+                <div className="overflow-x-auto rounded-2xl border border-gray-50">
                     <table className="table w-full">
-                        <thead className="bg-blue-600 text-white">
+                        <thead className="bg-gray-50 text-gray-500 uppercase text-[11px] font-black tracking-widest h-16">
                             <tr>
-                                <th>Photo</th>
-                                <th>Name</th>
+                                <th className="pl-6">Candidate</th>
                                 <th>Email</th>
                                 <th>Join Date</th>
-                                <th>Assets Count</th>
+                                <th>Assets</th>
                                 <th className="text-center">Action</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-gray-50">
                             {isLoading ? (
-                                <tr><td colSpan="6" className="text-center py-10">Loading Employees...</td></tr>
+                                <tr>
+                                    <td colSpan="5" className="text-center py-20">
+                                        <span className="loading loading-spinner loading-md text-blue-600"></span>
+                                    </td>
+                                </tr>
                             ) : employees.map((emp) => (
-                                <tr key={emp._id} className="hover:bg-blue-50 transition-colors">
-                                    <td>
-                                        <div className="avatar">
-                                            <div className="mask mask-circle w-12 h-12 border-2 border-blue-100">
-                                                <img src={emp.image || "https://i.ibb.co/mJR7z1C/avatar.png"} alt="Employee" />
+                                <tr key={emp._id} className="hover:bg-blue-50/30 transition-all h-20">
+                                    <td className="pl-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="avatar">
+                                                <div className="w-12 h-12 rounded-xl border-2 border-white shadow-sm">
+                                                    <img src={emp.photo || emp.image || "https://i.ibb.co/mJR7z1C/avatar.png"} alt="Employee" />
+                                                </div>
                                             </div>
+                                            <span className="font-black text-gray-800">{emp.name}</span>
                                         </div>
                                     </td>
-                                    <td className="font-bold text-gray-800">{emp.name}</td>
-                                    <td className="text-gray-600 italic">{emp.email}</td>
-                                    <td className="text-sm font-medium">{emp.joinedDate || "N/A"}</td>
+                                    <td className="text-gray-500 font-bold text-sm uppercase">{emp.email}</td>
+                                    <td className="text-gray-400 font-bold text-xs">{emp.joinedDate || "Recent"}</td>
                                     <td>
-                                        <div className="badge badge-info gap-2 font-bold py-3 px-4">
-                                            {emp.assetsCount} Assets
+                                        <div className="badge bg-blue-50 text-blue-600 border-blue-100 font-black py-3 px-4 rounded-lg">
+                                            {emp.assetsCount || 0} Items
                                         </div>
                                     </td>
                                     <td className="text-center">
                                         <button 
                                             onClick={() => handleRemove(emp._id)}
-                                            className="btn btn-ghost btn-sm text-red-500 hover:bg-red-50"
-                                            title="Remove Employee"
+                                            className="btn btn-circle btn-ghost text-red-400 hover:bg-red-50 hover:text-red-600 transition-all"
+                                            title="Remove from Team"
                                         >
-                                            <FaUserSlash size={18} />
+                                            <FaUserSlash size={20} />
                                         </button>
                                     </td>
                                 </tr>
@@ -84,7 +99,9 @@ const MyEmployeeList = () => {
                         </tbody>
                     </table>
                     {!isLoading && employees.length === 0 && (
-                        <p className="text-center py-20 text-gray-400">No employees found in your team.</p>
+                        <div className="text-center py-20">
+                            <p className="text-gray-400 font-bold italic">No employees have been added to your team yet.</p>
+                        </div>
                     )}
                 </div>
             </div>
