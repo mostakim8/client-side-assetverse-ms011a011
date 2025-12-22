@@ -5,6 +5,8 @@ import JoinEmployee from "../pages/JoinEmployee";
 import JoinHR from "../pages/JoinHR";
 import Login from "../pages/Login";
 import AddAsset from "../pages/AddAsset";
+import AssetList from "../pages/AssetList";
+import AllRequests from "../pages/AllRequests";
 
 const router = createBrowserRouter([
   {
@@ -30,7 +32,15 @@ const router = createBrowserRouter([
       {
     path: "add-asset",
     element: <AddAsset />
-}
+},
+{
+                path: "asset-list", 
+                element: <AssetList />,
+            },
+            {
+                path: "all-requests",  
+                element: <AllRequests />,
+            },
     ],
   },
 ]);

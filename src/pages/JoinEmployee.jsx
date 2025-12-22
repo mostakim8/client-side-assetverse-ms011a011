@@ -16,10 +16,10 @@ const JoinEmployee = () => {
         const dob = form.dob.value;
         const photo = form.photo.value;
 
-        // ১. ফায়ারবেসে ইউজার তৈরি করা
+// firebase create user
         createUser(email, password)
             .then(result => {
-                // ২. ইউজারের নাম এবং প্রোফাইল পিকচার আপডেট করা
+                // update user name and photo
                 updateUserProfile(name, photo)
                     .then(() => {
                         const userInfo = {
@@ -28,10 +28,10 @@ const JoinEmployee = () => {
                             dob,
                             photo,
                             role: 'employee',
-                            status: 'pending' // শুরুতে স্ট্যাটাস পেন্ডিং থাকবে
+                            status: 'pending' // status will be pending initially
                         };
 
-                        // ৩. MongoDB-তে ইউজারের তথ্য পাঠানো
+                        // send user data to mongoDB
                         fetch('http://localhost:5001/users', {
                             method: 'POST',
                             headers: {

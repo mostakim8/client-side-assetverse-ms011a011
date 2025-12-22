@@ -12,10 +12,10 @@ const AddAsset = () => {
             productName: data.productName,
             productType: data.productType, // Returnable or Non-returnable
             productQuantity: parseInt(data.productQuantity),
-            addedDate: new Date().toLocaleDateString(), // আরও সহজে পড়ার যোগ্য ডেট
+            addedDate: new Date().toLocaleDateString(), 
             hrEmail: user?.email,
-            hrName: user?.displayName, // ট্র্যাকিংয়ের জন্য নাম রাখা ভালো
-            availability: "available" // ডিফল্ট স্ট্যাটাস
+            hrName: user?.displayName, // for tracking 
+            availability: "available" // default value
         };
 
         try {

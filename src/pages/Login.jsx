@@ -10,15 +10,15 @@ const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
     
-    // লগইন করার পর আগের পেজে বা হোম পেজে যাওয়ার জন্য
+    // after login redirect to the page where user came from
     const from = location.state?.from?.pathname || "/";
 
     const onSubmit = async (data) => {
         try {
-            // ১. ফায়ারবেসে লগইন
+            // login firebase
             await signIn(data.email, data.password);
             
-            // ২. সার্ভার থেকে রোল ভেরিফাই করা (নিশ্চিত হওয়ার জন্য যে ইউজার ডাটাবেজে আছে)
+            // ২. verify user role from backend
             const res = await axios.get(`http://localhost:5001/users/role/${data.email}`);
             
             if (res.data) {
@@ -30,7 +30,7 @@ const Login = () => {
                     showConfirmButton: false
                 });
                 
-                // ৩. সরাসরি হোম পেজে রিডাইরেক্ট
+                // direct to home page
                 navigate(from, { replace: true });
             }
         } catch (error) {
