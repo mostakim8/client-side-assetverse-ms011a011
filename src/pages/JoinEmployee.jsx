@@ -30,7 +30,7 @@ const JoinEmployee = () => {
                             status: 'pending'
                         };
 
-                        fetch('http://localhost:5001/users', {
+                        fetch('${import.meta.env.VITE_API_URL}users', {
                             method: 'POST',
                             headers: {
                                 'content-type': 'application/json'
@@ -42,7 +42,7 @@ const JoinEmployee = () => {
                             if (data.insertedId) {
                                 
                                 try {
-                                    const resToken = await axios.post('http://localhost:5001/jwt', { email });
+                                    const resToken = await axios.post('${import.meta.env.VITE_API_URL}/jwt', { email });
                                     if (resToken.data.token) {
                                         localStorage.setItem('access-token', resToken.data.token);
                                         console.log("Token generated and saved after registration");

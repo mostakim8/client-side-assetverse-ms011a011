@@ -21,7 +21,7 @@ const UpgradePackage = () => {
         }).then(async (result) => {
             if (result.isConfirmed) {
                 try {
-                    const res = await axios.patch(`http://localhost:5001/users/upgrade-package/${user?.email}`, {
+                    const res = await axios.patch(`${import.meta.env.VITE_API_URL}/users/upgrade-package/${user?.email}`, {
                         newLimit: members
                     });
                     if (res.data.modifiedCount > 0) {

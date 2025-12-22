@@ -25,12 +25,12 @@ const JoinHR = () => {
                 status: 'active'
             };
 
-            const res = await axios.post('http://localhost:5001/users', userInfo);
+            const res = await axios.post('${import.meta.env.VITE_API_URL}/users', userInfo);
             
             if (res.data.insertedId) {
                 
                
-                const resToken = await axios.post('http://localhost:5001/jwt', { email: data.email });
+                const resToken = await axios.post('${import.meta.env.VITE_API_URL}/jwt', { email: data.email });
                 if (resToken.data.token) {
                     localStorage.setItem('access-token', resToken.data.token);
                 }

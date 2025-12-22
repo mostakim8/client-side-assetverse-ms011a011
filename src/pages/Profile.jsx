@@ -10,7 +10,7 @@ const Profile = () => {
     const { data: dbUser, refetch } = useQuery({
         queryKey: ['profile-data', user?.email],
         queryFn: async () => {
-            const res = await axios.get(`http://localhost:5001/users/${user?.email}`);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/users/${user?.email}`);
             return res.data;
         }
     });
@@ -23,7 +23,7 @@ const Profile = () => {
         try {
             await updateUserProfile(name, image);
 
-            const res = await axios.patch(`http://localhost:5001/users/update/${user?.email}`, {
+            const res = await axios.patch(`${import.meta.env.VITE_API_URL}/users/update/${user?.email}`, {
                 name: name,
                 image: image
             });

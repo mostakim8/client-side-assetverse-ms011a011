@@ -19,14 +19,14 @@ const Login = () => {
 
             // Jwt token from server 
             const userInfo = { email: loggedUser.email };
-            const resToken = await axios.post('http://localhost:5001/jwt', userInfo);
+            const resToken = await axios.post('${import.meta.env.VITE_API_URL}/jwt', userInfo);
             
             if (resToken.data.token) {
                 // save the token to local storage
                 localStorage.setItem('access-token', resToken.data.token);
                 console.log("Token saved successfully");
             }
-            const resRole = await axios.get(`http://localhost:5001/users/role/${data.email}`);
+            const resRole = await axios.get(`${import.meta.env.VITE_API_URL}/users/role/${data.email}`);
             
             if (resRole.data) {
                 Swal.fire({
@@ -49,7 +49,7 @@ const Login = () => {
             const result = await googleSignIn();
             const userInfo = { email: result.user?.email };
             
-            const res = await axios.post('http://localhost:5001/jwt', userInfo);
+            const res = await axios.post('${import.meta.env.VITE_API_URL}/jwt', userInfo);
             if (res.data.token) {
                 localStorage.setItem('access-token', res.data.token);
             }

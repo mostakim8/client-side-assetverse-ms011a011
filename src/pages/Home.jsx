@@ -10,7 +10,7 @@ const Home = () => {
 
     useEffect(() => {
         if (user?.email) {
-            axios.get(`http://localhost:5001/users/role/${user.email}`)
+            axios.get(`${import.meta.env.VITE_API_URL}/users/role/${user?.email}`)
                 .then(res => {
                     setRole(res.data.role);
                     setIsRoleLoading(false);
