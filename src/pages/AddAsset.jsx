@@ -1,78 +1,114 @@
 import { useForm } from "react-hook-form";
-import useAuth from "../hooks/UseAuth";
 import axios from "axios";
+import useAuth from "../hooks/UseAuth";
 import Swal from "sweetalert2";
+import { useNavigate } from "react-router-dom";
 
 const AddAsset = () => {
+    const { register, handleSubmit, reset, watch } = useForm();
     const { user } = useAuth();
-    const { register, handleSubmit, reset } = useForm();
+    const navigate = useNavigate();
+    
+    const imageUrl = watch("productImage");
 
     const onSubmit = async (data) => {
+        
         const assetInfo = {
             productName: data.productName,
-            productType: data.productType, // Returnable or Non-returnable
+            productType: data.productType,
             productQuantity: parseInt(data.productQuantity),
-            addedDate: new Date().toLocaleDateString(), 
+            productImage: data.productImage,
             hrEmail: user?.email,
-            hrName: user?.displayName, // for tracking 
-            availability: "available" // default value
+            addedDate: new Date().toLocaleDateString(),
         };
 
         try {
-            const res = await axios.post('http://localhost:5001/assets', assetInfo);
-            if (res.data.insertedId) {
+            const serverRes = await axios.post('http://localhost:5001/assets', assetInfo);
+            
+            if (serverRes.data.insertedId) {
                 Swal.fire({
-                    position: "top-end",
                     icon: "success",
-                    title: "Asset has been saved",
+                    title: "Asset Added!",
+                    text: "Product successfully added with Image URL.",
                     showConfirmButton: false,
                     timer: 1500
                 });
                 reset();
+                navigate('/asset-list');
             }
         } catch (error) {
-            Swal.fire("Error", "Something went wrong!", "error");
+            console.error("Error saving asset:", error);
+            Swal.fire("Error", "Failed to save asset. Please try again.", "error");
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-20 px-4">
-            <div className="max-w-md w-full p-8 bg-white shadow-2xl rounded-2xl border border-gray-100">
-                <h2 className="text-3xl font-black mb-6 text-center text-blue-600 tracking-tighter">Add New Asset</h2>
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-                    
+        <div className="p-8 pt-24 min-h-screen bg-gray-50 flex justify-center items-center">
+            <div className="card w-full max-w-lg bg-white shadow-xl border p-8 rounded-2xl">
+                <h2 className="text-3xl font-black mb-6 text-blue-600 text-center uppercase">
+                    Add Asset
+                </h2>
+                
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    {/* Product Name */}
                     <div className="form-control">
-                        <label className="label font-bold text-gray-700">Product Name</label>
+                        <label className="label font-bold">Product Name</label>
                         <input 
-                            {...register("productName", { required: true })} 
-                            placeholder="e.g. MacBook Pro, Monitor" 
-                            className="input input-bordered focus:border-blue-500 w-full" 
+                            type="text" 
+                            {...register("productName")} 
+                            placeholder="Ex: Wireless Mouse" 
+                            className="input input-bordered" 
+                            required 
                         />
                     </div>
 
+                    {/* Product Type */}
                     <div className="form-control">
-                        <label className="label font-bold text-gray-700">Product Type</label>
-                        <select 
-                            {...register("productType", { required: true })} 
-                            className="select select-bordered focus:border-blue-500 w-full"
-                        >
-                            <option value="Returnable">Returnable (Laptop, Phone)</option>
-                            <option value="Non-returnable">Non-returnable (Paper, Pen)</option>
+                        <label className="label font-bold">Product Type</label>
+                        <select {...register("productType")} className="select select-bordered" required>
+                            <option value="Returnable">Returnable</option>
+                            <option value="Non-returnable">Non-returnable</option>
                         </select>
                     </div>
 
+                    {/* Product Quantity */}
                     <div className="form-control">
-                        <label className="label font-bold text-gray-700">Product Quantity</label>
+                        <label className="label font-bold">Product Quantity</label>
                         <input 
                             type="number" 
-                            {...register("productQuantity", { required: true, min: 1 })} 
-                            placeholder="Quantity" 
-                            className="input input-bordered focus:border-blue-500 w-full" 
+                            {...register("productQuantity")} 
+                            placeholder="Ex: 25" 
+                            className="input input-bordered" 
+                            required 
                         />
                     </div>
 
-                    <button className="btn btn-primary w-full bg-blue-600 hover:bg-blue-700 border-none text-white font-bold text-lg">
-                        Add Asset
+                    {/* Product Image URL Input */}
+                    <div className="form-control">
+                        <label className="label font-bold text-red-500">Product Image URL</label>
+                        <input 
+                            type="url" 
+                            {...register("productImage")} 
+                            placeholder="Paste ImgBB or any Image Link here" 
+                            className="input input-bordered border-blue-300" 
+                            required 
+                        />
+                       
+                        {imageUrl && (
+                            <div className="mt-3 text-center">
+                                <p className="text-[10px] text-gray-400 mb-1">Image Preview:</p>
+                                <img 
+                                    src={imageUrl} 
+                                    alt="Preview" 
+                                    className="w-24 h-24 object-cover mx-auto rounded-lg border shadow-sm"
+                                    onError={(e) => e.target.style.display = 'none'} 
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    <button type="submit" className="btn btn-primary w-full bg-blue-600 border-none text-white mt-4 font-bold">
+                        Save Asset
                     </button>
                 </form>
             </div>

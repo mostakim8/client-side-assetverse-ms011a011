@@ -13,37 +13,37 @@ import { app } from "../firebase/firebase.config";
 
 export const AuthContext = createContext(null);
 const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider(); // এখানে নাম একবারই ব্যবহার করা হয়েছে
+const googleProvider = new GoogleAuthProvider(); 
 
 const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // ১. নতুন ইউজার তৈরি (Registration)
+    // Create new user Registration
     const createUser = (email, password) => {
         setLoading(true);
         return createUserWithEmailAndPassword(auth, email, password);
     };
 
-    // ২. লগইন (Login)
+    // Login
     const signIn = (email, password) => {
         setLoading(true);
         return signInWithEmailAndPassword(auth, email, password);
     };
 
-    // ৩. গুগল লগইন
+    // Google Sign-In
     const googleSignIn = () => {
         setLoading(true);
         return signInWithPopup(auth, googleProvider);
     };
 
-    // ৪. লগআউট (Logout)
+    // ৪. Logout
     const logOut = () => {
         setLoading(true);
         return signOut(auth);
     };
 
-    // ৫. প্রোফাইল আপডেট (নাম ও ছবি)
+    // update user profile name and photo
     const updateUserProfile = (name, photo) => {
         return updateProfile(auth.currentUser, {
             displayName: name,
@@ -51,7 +51,7 @@ const AuthProvider = ({ children }) => {
         });
     };
 
-    // ইউজারের অবস্থা পর্যবেক্ষণ করা
+    // user observer
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);

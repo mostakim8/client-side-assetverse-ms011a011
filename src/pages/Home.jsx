@@ -1,8 +1,36 @@
-import useAuth from "../hooks/UseAuth"; // 
+import { useEffect, useState } from "react";
+import useAuth from "../hooks/UseAuth";
+import axios from "axios";
+import HRHome from "./HRHome"; 
 
 const Home = () => {
-    const { user } = useAuth(); //
+    const { user, loading } = useAuth();
+    const [role, setRole] = useState(null);
+    const [isRoleLoading, setIsRoleLoading] = useState(true);
 
+    useEffect(() => {
+        if (user?.email) {
+            axios.get(`http://localhost:5001/users/role/${user.email}`)
+                .then(res => {
+                    setRole(res.data.role);
+                    setIsRoleLoading(false);
+                })
+                .catch(() => setIsRoleLoading(false));
+        } else {
+            setIsRoleLoading(false);
+        }
+    }, [user]);
+
+    if (loading || isRoleLoading) {
+        return <div className="min-h-screen flex items-center justify-center font-bold">Loading...</div>;
+    }
+
+    
+    if (user && role === 'hr') {
+        return <HRHome />;
+    }
+
+    
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Banner Section */}

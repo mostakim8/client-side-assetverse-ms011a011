@@ -8,7 +8,7 @@ const AllRequests = () => {
     const { user } = useAuth();
     const [search, setSearch] = useState("");
 
-    const { data: requests = [], refetch } = useQuery({
+    const { data: requests = [], refetch, isLoading } = useQuery({
         queryKey: ['requests', user?.email, search],
         queryFn: async () => {
             const res = await axios.get(`http://localhost:5001/all-requests/${user?.email}?search=${search}`);
@@ -16,75 +16,97 @@ const AllRequests = () => {
         }
     });
 
-    const handleStatusUpdate = async (id, newStatus) => {
-        const approvalDate = newStatus === 'Approved' ? new Date().toLocaleDateString() : null;
-        
-        try {
-            const res = await axios.patch(`http://localhost:5001/requests/${id}`, { 
-                status: newStatus,
-                approvalDate: approvalDate 
-            });
-            if (res.data.modifiedCount > 0) {
-                Swal.fire("Success", `Request ${newStatus}`, "success");
-                refetch();
+    const handleStatusUpdate = (req, newStatus) => {
+        Swal.fire({
+            title: `Confirm ${newStatus}?`,
+            text: newStatus === 'Approved' ? "Deducting quantity and creating affiliation if new employee." : "Status will be marked as Rejected.",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: newStatus === 'Approved' ? "#22c55e" : "#ef4444",
+            confirmButtonText: `Yes, ${newStatus}`
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const res = await axios.patch(`http://localhost:5001/requests/${req._id}`, { 
+                        status: newStatus,
+                        assetId: req.assetId,
+                        userEmail: req.userEmail,
+                        hrEmail: user?.email,
+                        companyName: "AssetVerse", 
+                        companyLogo: user?.photoURL
+                    });
+                    
+                    if (res.data.modifiedCount > 0) {
+                        Swal.fire("Done!", `Request is ${newStatus}`, "success");
+                        refetch();
+                    }
+                } catch (error) {
+                    Swal.fire("Error", "Something went wrong", "error");
+                }
             }
-        } catch (error) {
-            Swal.fire("Error", "Something went wrong", "error");
-        }
+        });
     };
 
-    return (
-        <div className="p-8 pt-24 min-h-screen bg-gray-50">
-            <div className="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-sm border">
-                <h2 className="text-3xl font-black mb-8 border-l-4 border-blue-600 pl-4">All Asset Requests</h2>
+    if (isLoading) return <div className="text-center mt-20 font-bold">Loading...</div>;
 
-                {/* Search Bar */}
-                <div className="mb-6 max-w-md">
+    return (
+        <div className="p-4 md:p-8 pt-24 min-h-screen bg-gray-50">
+            <div className="max-w-7xl mx-auto bg-white p-6 rounded-2xl shadow-sm border">
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 className="text-2xl font-black text-gray-800">All Asset Requests</h2>
                     <input 
                         type="text" 
-                        placeholder="Search by name or email..." 
-                        className="input input-bordered w-full"
+                        placeholder="Search by name/email" 
+                        className="input input-bordered w-full md:w-80"
                         onChange={(e) => setSearch(e.target.value)}
                     />
                 </div>
 
-                <div className="overflow-x-auto rounded-xl border">
-                    <table className="table w-full">
-                        <thead className="bg-blue-600 text-white">
+                <div className="overflow-x-auto">
+                    <table className="table w-full border">
+                        <thead className="bg-gray-100 text-gray-700">
                             <tr>
-                                <th>Asset Name</th>
-                                <th>Asset Type</th>
-                                <th>Requester</th>
-                                <th>Request Date</th>
+                                <th>Employee</th>
+                                <th>Asset</th>
+                                <th>Date</th>
                                 <th>Status</th>
-                                <th className="text-center">Action</th>
+                                <th className="text-center">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {requests.map((req) => (
                                 <tr key={req._id}>
-                                    <td className="font-bold">{req.productName}</td>
-                                    <td>{req.productType}</td>
+                                    {/* Employee Column */}
                                     <td>
-                                        <div className="text-sm">
-                                            <p className="font-bold">{req.userName}</p>
-                                            <p className="text-gray-500">{req.userEmail}</p>
-                                        </div>
+                                        <div className="font-bold">{req.userName}</div>
+                                        <div className="text-xs text-gray-500">{req.userEmail}</div>
                                     </td>
-                                    <td>{req.requestDate}</td>
+                                    {/* Asset Column */}
                                     <td>
-                                        <span className={`badge font-bold ${req.status === 'Pending' ? 'badge-warning' : req.status === 'Approved' ? 'badge-success' : 'badge-error'}`}>
+                                        <div className="font-medium">{req.productName}</div>
+                                        <div className="text-xs badge badge-ghost">{req.productType}</div>
+                                    </td>
+                                    {/* Date Column */}
+                                    <td className="text-sm">{req.requestDate}</td>
+                                    {/* Status Column */}
+                                    <td>
+                                        <span className={`badge badge-sm font-bold ${
+                                            req.status === 'Pending' ? 'badge-warning' : 
+                                            req.status === 'Approved' ? 'badge-success text-white' : 'badge-error text-white'
+                                        }`}>
                                             {req.status}
                                         </span>
                                     </td>
-                                    <td className="flex justify-center gap-2">
-                                        {req.status === 'Pending' && (
-                                            <>
-                                                <button onClick={() => handleStatusUpdate(req._id, 'Approved')} className="btn btn-success btn-xs text-white">Approve</button>
-                                                <button onClick={() => handleStatusUpdate(req._id, 'Rejected')} className="btn btn-error btn-xs text-white">Reject</button>
-                                            </>
+                                    {/* Actions Column */}
+                                    <td className="text-center">
+                                        {req.status === 'Pending' ? (
+                                            <div className="flex justify-center gap-2">
+                                                <button onClick={() => handleStatusUpdate(req, 'Approved')} className="btn btn-success btn-xs text-white">Approve</button>
+                                                <button onClick={() => handleStatusUpdate(req, 'Rejected')} className="btn btn-error btn-xs text-white">Reject</button>
+                                            </div>
+                                        ) : (
+                                            <span className="text-xs text-gray-400 font-semibold uppercase italic">Action Taken</span>
                                         )}
-                                        {req.status !== 'Pending' && <span className="text-xs italic text-gray-400">Action Taken</span>}
                                     </td>
                                 </tr>
                             ))}
