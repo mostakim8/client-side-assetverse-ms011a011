@@ -4,6 +4,7 @@ import Home from "../pages/Home";
 import JoinEmployee from "../pages/JoinEmployee";
 import JoinHR from "../pages/JoinHR";
 import Login from "../pages/Login";
+import AddAsset from "../pages/AddAsset";
 
 const router = createBrowserRouter([
   {
@@ -26,6 +27,10 @@ const router = createBrowserRouter([
         path: "login",
         element: <Login />,
       },
+      {
+    path: "add-asset",
+    element: <AddAsset />
+}
     ],
   },
 ]);

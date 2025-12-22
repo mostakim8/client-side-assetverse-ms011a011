@@ -1,95 +1,73 @@
-import React, { useContext } from 'react';
-import { AuthContext } from '../providers/AuthProvider';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import Swal from 'sweetalert2';
+import { useForm } from "react-hook-form";
+import useAuth from "../hooks/UseAuth";
+import { useNavigate, useLocation } from "react-router-dom";
+import axios from "axios";
+import Swal from "sweetalert2";
 
 const Login = () => {
-    const { signIn, googleSignIn } = useContext(AuthContext);
+    const { signIn, googleSignIn } = useAuth();
+    const { register, handleSubmit } = useForm();
     const navigate = useNavigate();
     const location = useLocation();
-
-    // লগইন করার পর ইউজারকে আগের পেজে বা হোম পেজে পাঠানোর জন্য
+    
+    // লগইন করার পর আগের পেজে বা হোম পেজে যাওয়ার জন্য
     const from = location.state?.from?.pathname || "/";
 
-    const handleLogin = (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const email = form.email.value;
-        const password = form.password.value;
-
-        // ফায়ারবেস সাইন-ইন লজিক
-        signIn(email, password)
-            .then(result => {
+    const onSubmit = async (data) => {
+        try {
+            // ১. ফায়ারবেসে লগইন
+            await signIn(data.email, data.password);
+            
+            // ২. সার্ভার থেকে রোল ভেরিফাই করা (নিশ্চিত হওয়ার জন্য যে ইউজার ডাটাবেজে আছে)
+            const res = await axios.get(`http://localhost:5001/users/role/${data.email}`);
+            
+            if (res.data) {
                 Swal.fire({
-                    title: 'Success!',
-                    text: 'Login Successful',
-                    icon: 'success',
+                    title: "Success",
+                    text: "Login Successful!",
+                    icon: "success",
                     timer: 1500,
                     showConfirmButton: false
                 });
+                
+                // ৩. সরাসরি হোম পেজে রিডাইরেক্ট
                 navigate(from, { replace: true });
-            })
-            .catch(error => {
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Invalid email or password',
-                    icon: 'error'
-                });
-            });
-    };
-
-    // গুগল দিয়ে লগইন
-    const handleGoogleLogin = () => {
-        googleSignIn()
-            .then(result => {
-                Swal.fire({
-                    title: 'Success!',
-                    text: 'Login Successful with Google',
-                    icon: 'success',
-                    timer: 1500,
-                    showConfirmButton: false
-                });
-                navigate(from, { replace: true });
-            })
-            .catch(error => {
-                Swal.fire('Error', error.message, 'error');
-            });
+            }
+        } catch (error) {
+            Swal.fire("Error", error.message, "error");
+        }
     };
 
     return (
-        <div className="min-h-screen bg-base-200 flex items-center justify-center py-10">
-            <div className="card w-full max-w-md shadow-2xl bg-base-100 p-8">
-                <form onSubmit={handleLogin}>
-                    <h2 className="text-3xl font-bold text-center mb-6 text-primary">Login Now</h2>
-                    
-                    <div className="form-control mb-4">
-                        <label className="label">
-                            <span className="label-text">Email Address</span>
-                        </label>
-                        <input type="email" name="email" placeholder="Enter your email" className="input input-bordered" required />
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 pt-16 px-4">
+            <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
+                <h2 className="text-3xl font-black text-center text-blue-600 mb-6 tracking-tighter">Login</h2>
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <div className="form-control">
+                        <label className="label font-bold text-gray-600">Email</label>
+                        <input {...register("email")} type="email" placeholder="Enter your email" className="input input-bordered focus:border-blue-500" required />
                     </div>
-
-                    <div className="form-control mb-6">
-                        <label className="label">
-                            <span className="label-text">Password</span>
-                        </label>
-                        <input type="password" name="password" placeholder="Enter password" className="input input-bordered" required />
+                    <div className="form-control">
+                        <label className="label font-bold text-gray-600">Password</label>
+                        <input {...register("password")} type="password" placeholder="Enter your password" className="input input-bordered focus:border-blue-500" required />
                     </div>
-
-                    <button className="btn btn-primary w-full">Login</button>
+                    <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition duration-300 shadow-lg mt-2">
+                        Login
+                    </button>
                 </form>
-
-                <div className="divider text-gray-400">OR</div>
-
-                <button onClick={handleGoogleLogin} className="btn btn-outline btn-secondary w-full">
+                
+                <div className="divider my-6 text-gray-400 font-bold uppercase text-xs">OR</div>
+                
+                <button 
+                    onClick={() => googleSignIn().then(() => navigate(from))} 
+                    className="w-full border-2 border-gray-200 py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition active:scale-95"
+                >
+                    <img className="w-5" src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
                     Continue with Google
                 </button>
-
-                <p className="text-center mt-6 text-sm">
-                    New to AssetVerse? <br />
-                    <Link to="/join-employee" className="text-blue-600 hover:underline font-semibold">Join as Employee</Link> 
-                    <span className="mx-2">|</span>
-                    <Link to="/join-hr" className="text-purple-600 hover:underline font-semibold">Join as HR Manager</Link>
+                
+                <p className="mt-6 text-center text-sm text-gray-600 font-medium">
+                    New here? <span className="text-blue-600 font-bold">Register as Employee or HR</span>
                 </p>
             </div>
         </div>
