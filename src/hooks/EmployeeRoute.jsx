@@ -10,7 +10,7 @@ const EmployeeRoute = ({ children }) => {
         queryKey: [user?.email, 'role'],
         enabled: !!user?.email,
         queryFn: async () => {
-            const res = await axios.get(`${import.meta.env.VITE_API_URL}}/users/role/${user?.email}`);
+            const res = await axios.get(`${import.meta.env.VITE_API_URL}/users/role/${user?.email}`);
 return res.data.role;
         }
     });
