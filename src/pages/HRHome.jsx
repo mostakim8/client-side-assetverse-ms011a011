@@ -86,7 +86,7 @@ const HRHome = () => {
                 </div>
             </div>
 
-            {/*  Limited Stock Items Section */}
+            {/* Limited Stock Items Section */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mt-10">
                 <h3 className="text-xl font-bold mb-6 text-red-600 border-l-4 border-red-600 pl-3">Limited Stock Items (Quantity &lt; 10)</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
