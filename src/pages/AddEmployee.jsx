@@ -139,7 +139,7 @@ const AddEmployee = () => {
                 </div>
 
                 {/* employee selection table */}
-                <div className="bg-white p-8 rounded-[32px] shadow-sm border border-gray-100">
+                <div className="bg-white p-8 rounded-4xl shadow-sm border border-gray-100">
                     <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                         <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight">Available Candidates</h3>
                         <button 
