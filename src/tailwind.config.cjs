@@ -1,4 +1,3 @@
-// ফাইলের নাম tailwind.config.cjs হলে এই কোডটি দিন
 module.exports = {
   content: [
     "./index.html",

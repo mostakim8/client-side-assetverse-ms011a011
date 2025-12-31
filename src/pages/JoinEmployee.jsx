@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../providers/AuthProvider';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import axios from 'axios';
-import { Mail, Lock, User, Calendar, Image as ImageIcon, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Calendar, Image as ImageIcon, ArrowRight, UserPlus } from 'lucide-react';
 
 const JoinEmployee = () => {
-    const { createUser, updateUserProfile } = useContext(AuthContext);
+    const { createUser, updateUserProfile, setUser } = useContext(AuthContext);
     const navigate = useNavigate();
 
     const handleRegister = async (e) => {
@@ -19,8 +19,10 @@ const JoinEmployee = () => {
         const photo = form.photo.value;
 
         try {
-            await createUser(email, password);
+            const result = await createUser(email, password);
             await updateUserProfile(name, photo);
+
+            const currentUser = { ...result.user, displayName: name, photoURL: photo };
 
             const userInfo = {
                 name,
@@ -39,14 +41,18 @@ const JoinEmployee = () => {
                     localStorage.setItem('access-token', resToken.data.token);
                 }
 
+                if (setUser) setUser(currentUser);
+
                 Swal.fire({
                     title: 'Welcome!',
-                    text: 'Your Employee Account is Ready',
+                    text: 'Employee Account Created Successfully',
                     icon: 'success',
                     showConfirmButton: false,
                     timer: 1500
                 });
-                navigate('/');
+                
+                // delay navigation to allow users to see the success message
+                setTimeout(() => navigate('/'), 500);
             }
         } catch (error) {
             Swal.fire('Error!', error.message, 'error');
@@ -54,82 +60,51 @@ const JoinEmployee = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center py-12 px-4">
-            <div className="max-w-md w-full bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
-                <div className="bg-blue-600 p-8 text-center text-white">
-                    <h2 className="text-3xl font-extrabold tracking-tight">Join AssetVerse</h2>
-                    <p className="mt-2 text-blue-100 opacity-90">Register as an Employee to get started</p>
+        <div className="min-h-screen bg-[#f8fafc] flex items-center justify-center py-16 px-4">
+            <div className="max-w-xl w-full bg-white rounded-[2.5rem] shadow-2xl shadow-blue-100 border border-gray-100 overflow-hidden">
+                <div className="bg-blue-600 p-10 text-center text-white relative">
+                    <div className="absolute top-4 right-6 opacity-10">
+                        <UserPlus size={100} />
+                    </div>
+                    <h2 className="text-4xl font-black uppercase tracking-tighter">Join <span className="text-blue-200">Team</span></h2>
+                    <p className="mt-2 text-blue-100 font-bold uppercase text-[10px] tracking-[0.3em]">Employee Registration</p>
                 </div>
 
-                <div className="p-8">
+                <div className="p-10">
                     <form onSubmit={handleRegister} className="space-y-5">
-                        {/* Name Field */}
-                        <div>
-                            <label className="text-sm font-semibold text-gray-700 block mb-1">Full Name</label>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                    <User size={18} />
-                                </span>
-                                <input type="text" name="name" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none" placeholder="John Doe" required />
+                        <div className="relative group">
+                            <User className="absolute top-1/2 -translate-y-1/2 left-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+                            <input type="text" name="name" className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-medium transition-all" placeholder="Full Name" required />
+                        </div>
+
+                        <div className="relative group">
+                            <Mail className="absolute top-1/2 -translate-y-1/2 left-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+                            <input type="email" name="email" className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-medium transition-all" placeholder="Email Address" required />
+                        </div>
+
+                        <div className="relative group">
+                            <Lock className="absolute top-1/2 -translate-y-1/2 left-4 text-gray-400 group-focus-within:text-blue-600 transition-colors" size={18} />
+                            <input type="password" name="password" className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-medium transition-all" placeholder="Secure Password" required />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="relative group">
+                                <Calendar className="absolute top-1/2 -translate-y-1/2 left-4 text-gray-400" size={18} />
+                                <input type="date" name="dob" className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-xs font-bold text-gray-500 uppercase" required />
+                            </div>
+                            <div className="relative group">
+                                <ImageIcon className="absolute top-1/2 -translate-y-1/2 left-4 text-gray-400" size={18} />
+                                <input type="text" name="photo" className="w-full pl-12 pr-4 py-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none text-sm font-medium transition-all" placeholder="Profile Photo URL" required />
                             </div>
                         </div>
 
-                        {/* Email Field */}
-                        <div>
-                            <label className="text-sm font-semibold text-gray-700 block mb-1">Email Address</label>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                    <Mail size={18} />
-                                </span>
-                                <input type="email" name="email" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none" placeholder="example@mail.com" required />
-                            </div>
-                        </div>
-
-                        {/* Password Field */}
-                        <div>
-                            <label className="text-sm font-semibold text-gray-700 block mb-1">Secure Password</label>
-                            <div className="relative">
-                                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                    <Lock size={18} />
-                                </span>
-                                <input type="password" name="password" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none" placeholder="••••••••" required />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* DOB Field */}
-                            <div>
-                                <label className="text-sm font-semibold text-gray-700 block mb-1">Birth Date</label>
-                                <div className="relative">
-                                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                        <Calendar size={18} />
-                                    </span>
-                                    <input type="date" name="dob" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm" required />
-                                </div>
-                            </div>
-
-                            {/* Photo URL */}
-                            <div>
-                                <label className="text-sm font-semibold text-gray-700 block mb-1">Profile URL</label>
-                                <div className="relative">
-                                    <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                                        <ImageIcon size={18} />
-                                    </span>
-                                    <input type="text" name="photo" className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none text-sm" placeholder="Image Link" required />
-                                </div>
-                            </div>
-                        </div>
-
-                        <button className="group relative w-full flex justify-center py-3 px-4 border border-transparent font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 mt-6 shadow-lg shadow-blue-200">
-                            Create Account
-                            <span className="ml-2">
-                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-                            </span>
+                        <button className="w-full flex justify-center items-center gap-3 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-100 mt-4 group">
+                            Create Account <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                         </button>
                     </form>
                     
-                    <p className="mt-6 text-center text-sm text-gray-500">
-                        Already have an account? <a href="/login" className="text-blue-600 font-bold hover:underline">Log in</a>
+                    <p className="mt-8 text-center text-sm font-medium text-gray-400">
+                        Already part of a team? <Link to="/login" className="text-blue-600 font-black hover:underline uppercase text-xs tracking-wider">Login</Link>
                     </p>
                 </div>
             </div>

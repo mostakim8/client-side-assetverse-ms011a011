@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../hooks/UseAuth";
 import useAxiosSecure from "../hooks/useAxiosSecure"; 
 import Swal from "sweetalert2";
 import { Link, useNavigate } from "react-router-dom";
-import { FaUserPlus, FaCrown, FaUsers } from "react-icons/fa";
+import { UserPlus, Crown, Users, CheckCircle2, AlertCircle, Search, Loader2 } from "lucide-react";
 
 const AddEmployee = () => {
     const { user } = useAuth();
     const axiosSecure = useAxiosSecure();
     const navigate = useNavigate();
     const [selectedEmployees, setSelectedEmployees] = useState([]);
+    const [search, setSearch] = useState("");
 
+    // Get HR Profile for Package Limit
     const { data: hrData = {} } = useQuery({
         queryKey: ['hr-profile', user?.email],
         enabled: !!user?.email,
@@ -21,7 +23,7 @@ const AddEmployee = () => {
         }
     });
 
-    // how many members are already in the team
+    // Get current team count
     const { data: teamCount = 0, refetch: refetchCount } = useQuery({
         queryKey: ['team-count', user?.email],
         enabled: !!user?.email,
@@ -31,33 +33,34 @@ const AddEmployee = () => {
         }
     });
 
-    const { data: availableEmployees = [], refetch: refetchAvailable, isLoading } = useQuery({
-        queryKey: ['unaffiliated-employees'],
+    // Get unaffiliated employees (available for hire)
+    const { data: availableEmployees = [], refetch: refetchAvailable, isLoading, isFetching } = useQuery({
+        queryKey: ['unaffiliated-employees', search],
         queryFn: async () => {
-            const res = await axiosSecure.get('/unaffiliated-employees');
+            const res = await axiosSecure.get(`/unaffiliated-employees?search=${search}`);
             return res.data;
         }
     });
-// member select and deselect
+
+    const packageLimit = hrData?.packageLimit || 0;
+    const remainingSlots = packageLimit - teamCount;
+
     const handleSelect = (id) => {
         if (selectedEmployees.includes(id)) {
             setSelectedEmployees(selectedEmployees.filter(empId => empId !== id));
         } else {
-           
-            const currentTotal = teamCount + selectedEmployees.length;
-            if (currentTotal >= (hrData?.packageLimit || 0)) {
+            const currentSelectedCount = selectedEmployees.length;
+            if (currentSelectedCount >= remainingSlots) {
                 return Swal.fire({
                     icon: 'warning',
-                    title: 'Limit Exceeded!',
-                    text: `Your package limit is ${hrData?.packageLimit}. Please upgrade to add more members.`,
+                    title: 'Capacity Reached!',
+                    text: `Your current package (${packageLimit} members) doesn't have enough slots.`,
                     showCancelButton: true,
-                    confirmButtonText: 'Upgrade Now',
+                    confirmButtonText: 'Upgrade Package',
                     confirmButtonColor: '#2563eb',
-                    cancelButtonColor: '#d33'
+                    borderRadius: '24px'
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        navigate("/upgrade-package");
-                    }
+                    if (result.isConfirmed) navigate("/upgrade-package");
                 });
             }
             setSelectedEmployees([...selectedEmployees, id]);
@@ -67,19 +70,10 @@ const AddEmployee = () => {
     const handleBulkAdd = async () => {
         if (selectedEmployees.length === 0) return;
 
-        if (teamCount + selectedEmployees.length > (hrData?.packageLimit || 0)) {
-            return Swal.fire({
-                icon: 'error',
-                title: 'Action Denied!',
-                text: `You have ${teamCount} members. You can't add ${selectedEmployees.length} more. Upgrade your package first.`,
-                confirmButtonText: 'Upgrade Now',
-                showCancelButton: true,
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    navigate("/upgrade-package");
-                }
-            });
-        }
+        Swal.fire({
+            title: 'Adding Members...',
+            didOpen: () => { Swal.showLoading() }
+        });
 
         const info = {
             hrEmail: user?.email,
@@ -93,116 +87,139 @@ const AddEmployee = () => {
             if (res.data.modifiedCount > 0) {
                 Swal.fire({
                     icon: "success",
-                    title: "Members Added!",
-                    text: `${res.data.modifiedCount} employees successfully joined your team.`,
+                    title: "Success!",
+                    text: `${res.data.modifiedCount} members joined your organization.`,
                     timer: 2000,
-                    showConfirmButton: false
+                    showConfirmButton: false,
+                    borderRadius: '20px'
                 });
                 setSelectedEmployees([]);
                 refetchAvailable();
                 refetchCount();
             }
         } catch (error) {
-            Swal.fire("Error", "Action failed. Please try again.", "error");
+            Swal.fire("Error", "Check your internet connection and try again.", "error");
         }
     };
 
     if (isLoading) return (
-        <div className="flex justify-center items-center min-h-screen">
-            <span className="loading loading-bars loading-lg text-blue-600"></span>
+        <div className="flex justify-center items-center min-h-screen bg-[#fcfcfd]">
+            <Loader2 className="animate-spin text-blue-600 w-12 h-12" />
         </div>
     );
 
     return (
-        <div className="p-4 md:p-8 pt-24 min-h-screen bg-gray-50">
+        <div className="p-4 md:p-10 pt-28 min-h-screen bg-[#fcfcfd]">
             <div className="max-w-6xl mx-auto">
                 
-                {/* package status card */}
-                <div className="bg-white p-8 rounded-4xl shadow-sm border border-gray-100 mb-10 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
-                            <FaUsers size={32} />
+                {/* Package Status Dashboard */}
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-xl shadow-gray-200/40 border border-gray-100 mb-10 overflow-hidden relative">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 blur-3xl opacity-50"></div>
+                    
+                    <div className="flex flex-col lg:flex-row justify-between items-center gap-8 relative z-10">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 bg-blue-600 rounded-3xl flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                                <Users size={32} />
+                            </div>
+                            <div>
+                                <h2 className="text-3xl font-black text-gray-900 uppercase tracking-tighter">Team <span className="text-blue-600 italic">Builder</span></h2>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <div className="w-48 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-full bg-blue-600 rounded-full transition-all duration-1000" 
+                                            style={{ width: `${(teamCount / packageLimit) * 100}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        {teamCount} / {packageLimit} Slots
+                                    </span>
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <h2 className="text-2xl font-black text-gray-800 uppercase tracking-tighter">Team Management</h2>
-                            <p className="text-gray-500 font-bold">
-                                Capacity: <span className="text-blue-600">{teamCount} / {hrData?.packageLimit || 0}</span> Members Used
-                            </p>
-                        </div>
+                        
+                        <Link 
+                            to="/upgrade-package" 
+                            className="w-full lg:w-auto px-8 py-4 bg-amber-400 hover:bg-amber-500 text-amber-900 font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-amber-100"
+                        >
+                            <Crown size={18} /> Upgrade Capacity
+                        </Link>
                     </div>
-                    <Link 
-                        to="/upgrade-package" 
-                        className="btn bg-amber-400 hover:bg-amber-500 border-none text-amber-900 font-black rounded-2xl px-8 h-14"
-                    >
-                        <FaCrown /> Upgrade Limit
-                    </Link>
                 </div>
 
-                {/* employee selection table */}
-                <div className="bg-white p-8 rounded-4xl shadow-sm border border-gray-100">
-                    <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                        <h3 className="text-xl font-black text-gray-800 uppercase tracking-tight">Available Candidates</h3>
+                {/* Main Content Area */}
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-gray-200/30 border border-gray-50 overflow-hidden">
+                    <div className="p-8 lg:p-10 border-b border-gray-50 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="relative w-full md:w-96 group">
+                            <Search className={`absolute top-1/2 -translate-y-1/2 left-5 transition-colors ${search ? 'text-blue-600' : 'text-gray-300'}`} size={18} />
+                            <input 
+                                type="text" 
+                                placeholder="Search candidates..." 
+                                className="input w-full pl-14 h-14 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-bold text-sm"
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
+
                         <button 
                             onClick={handleBulkAdd}
                             disabled={selectedEmployees.length === 0}
-                            className="btn btn-primary bg-blue-600 hover:bg-blue-700 border-none text-white px-10 rounded-2xl h-14 shadow-lg shadow-blue-100 disabled:bg-gray-200"
+                            className="w-full md:w-auto px-10 py-4 bg-gray-900 hover:bg-blue-600 disabled:bg-gray-100 text-white font-black text-[11px] uppercase tracking-[0.2em] rounded-2xl transition-all flex items-center justify-center gap-3 shadow-xl"
                         >
-                            <FaUserPlus /> Add Selected ({selectedEmployees.length})
+                            <UserPlus size={18} /> Add Selected ({selectedEmployees.length})
                         </button>
                     </div>
 
-                    <div className="overflow-x-auto rounded-2xl">
-                        <table className="table w-full">
-                            <thead className="bg-gray-50 text-gray-500 uppercase text-[11px] font-black tracking-widest h-16">
-                                <tr>
-                                    <th className="pl-6">Select</th>
-                                    <th>Candidate</th>
-                                    <th>Action</th>
+                    <div className="overflow-x-auto">
+                        <table className="table w-full border-separate border-spacing-0">
+                            <thead>
+                                <tr className="bg-gray-50/50">
+                                    <th className="py-6 pl-10 text-[10px] font-black uppercase tracking-widest text-gray-400">Select</th>
+                                    <th className="py-6 text-[10px] font-black uppercase tracking-widest text-gray-400">Candidate Profile</th>
+                                    <th className="py-6 pr-10 text-[10px] font-black uppercase tracking-widest text-gray-400 text-right">Action</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {availableEmployees.map((emp) => (
-                                    <tr key={emp._id} className="hover:bg-blue-50/30 transition-all h-20">
-                                        <td className="pl-6">
+                                    <tr key={emp._id} className="group hover:bg-blue-50/30 transition-all">
+                                        <td className="py-5 pl-10">
                                             <input 
                                                 type="checkbox" 
-                                                className="checkbox checkbox-primary rounded-lg border-gray-300"
+                                                className="checkbox checkbox-primary rounded-xl w-6 h-6 border-2 border-gray-200"
                                                 checked={selectedEmployees.includes(emp._id)}
                                                 onChange={() => handleSelect(emp._id)}
                                             />
                                         </td>
-                                        <td>
+                                        <td className="py-5">
                                             <div className="flex items-center gap-4">
-                                                <div className="avatar">
-                                                    <div className="w-12 h-12 rounded-xl border-2 border-white shadow-sm">
-                                                        <img src={emp.photo || emp.image || "https://i.ibb.co/mJR7z1C/avatar.png"} alt="Member" />
-                                                    </div>
+                                                <div className="w-12 h-12 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+                                                    <img src={emp.photo || emp.image || "https://i.ibb.co/mJR7z1C/avatar.png"} alt="Member" className="w-full h-full object-cover" />
                                                 </div>
                                                 <div>
-                                                    <p className="font-black text-gray-800">{emp.name}</p>
-                                                    <p className="text-xs font-bold text-gray-400 uppercase">{emp.email}</p>
+                                                    <p className="font-black text-gray-800 tracking-tight">{emp.name}</p>
+                                                    <p className="text-[10px] font-bold text-gray-400 uppercase">{emp.email}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>
+                                        <td className="py-5 pr-10 text-right">
                                             <button 
                                                 onClick={() => handleSelect(emp._id)}
-                                                className={`btn btn-sm rounded-xl px-6 font-bold transition-all ${
+                                                className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
                                                     selectedEmployees.includes(emp._id) 
-                                                    ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100' 
-                                                    : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100'
+                                                    ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+                                                    : 'bg-white text-blue-600 border border-blue-100 hover:bg-blue-600 hover:text-white hover:border-blue-600 shadow-sm'
                                                 }`}
                                             >
-                                                {selectedEmployees.includes(emp._id) ? 'Deselect' : 'Select Employee'}
+                                                {selectedEmployees.includes(emp._id) ? 'Deselect' : 'Select'}
                                             </button>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        {availableEmployees.length === 0 && (
-                            <div className="text-center py-20">
-                                <p className="text-gray-400 font-medium italic">No unaffiliated employees found.</p>
+                        
+                        {availableEmployees.length === 0 && !isLoading && (
+                            <div className="text-center py-24">
+                                <AlertCircle size={40} className="mx-auto text-gray-200 mb-4" />
+                                <p className="text-gray-400 font-black uppercase tracking-widest text-xs italic">No candidates available at the moment</p>
                             </div>
                         )}
                     </div>

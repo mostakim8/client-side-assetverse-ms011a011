@@ -5,7 +5,7 @@ import UseRole from "../hooks/UseRole";
 import Swal from "sweetalert2";
 import { 
     LayoutDashboard, Box, PlusCircle, GitPullRequest, 
-    Users, ArrowUpCircle, UserCircle, LogOut, Menu, X, ChevronDown, Home 
+    Users, ArrowUpCircle, UserCircle, LogOut, Menu, X, ChevronDown, Home, UserPlus 
 } from "lucide-react";
 
 const Navbar = () => {
@@ -33,11 +33,9 @@ const Navbar = () => {
             .catch(error => console.log(error));
     };
 
-    // স্টাইল কনফিগারেশন
     const linkStyle = "flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-xl transition-all duration-300 no-underline";
     const activeStyle = "flex items-center gap-2 px-4 py-2 text-sm font-black text-blue-600 bg-blue-50 rounded-xl no-underline";
 
-    // মেনু আইটেম লজিক (মোবাইলে ক্লিক করলে বন্ধ হওয়ার সুবিধাসহ)
     const menuItems = (
         <>
             <li>
@@ -56,10 +54,13 @@ const Navbar = () => {
             {/* HR Manager Links */}
             {user && role === 'hr' && (
                 <>
-                    <li><NavLink to="/asset-list" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><Box size={16}/> Asset List</NavLink></li>
                     <li><NavLink to="/add-asset" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><PlusCircle size={16}/> Add Asset</NavLink></li>
-                    <li><NavLink to="/all-requests" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><GitPullRequest size={16}/> Requests</NavLink></li>
-                    <li><NavLink to="/my-employee-list" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><Users size={16}/> Employees</NavLink></li>
+                    <li><NavLink to="/asset-list" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><Box size={16}/> Asset List</NavLink></li> 
+                    <li><NavLink to="/all-requests" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><GitPullRequest size={16}/> All Requests</NavLink></li>
+                    {/* নতুন লিঙ্ক যোগ করা হয়েছে */}
+                    <li><NavLink to="/add-employee" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><UserPlus size={16}/> Add Employee</NavLink></li>
+                    <li><NavLink to="/my-employee-list" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><Users size={16}/> Employee List</NavLink></li>
+                    
                 </>
             )}
 
@@ -78,7 +79,6 @@ const Navbar = () => {
         <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-[100] h-20 flex items-center shadow-sm">
             <div className="max-w-7xl mx-auto w-full px-4 flex items-center justify-between">
                 
-                {/* Logo Section */}
                 <div className="flex items-center gap-2">
                     <button 
                         onClick={() => setIsOpen(!isOpen)} 
@@ -96,14 +96,12 @@ const Navbar = () => {
                     </Link>
                 </div>
 
-                {/* Desktop Navigation */}
                 <div className="hidden lg:flex items-center">
                     <ul className="flex items-center gap-1 list-none m-0 p-0">
                         {menuItems}
                     </ul>
                 </div>
 
-                {/* Right Side: Profile & Auth */}
                 <div className="flex items-center gap-4">
                     {user ? (
                         <div className="relative">
@@ -123,7 +121,6 @@ const Navbar = () => {
                                 <ChevronDown size={14} className={`text-gray-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
                             </div>
 
-                            {/* Profile Dropdown */}
                             {profileOpen && (
                                 <div className="absolute top-14 right-0 w-56 bg-white rounded-2xl shadow-2xl border border-gray-50 p-2 z-50 animate-in fade-in slide-in-from-top-2">
                                     <NavLink to="/profile" onClick={() => setProfileOpen(false)} className={linkStyle}>
@@ -151,10 +148,8 @@ const Navbar = () => {
                     )}
                 </div>
 
-                {/* Mobile Sidebar Navigation */}
                 {isOpen && (
                     <>
-                        {/* মডাল ব্যাকড্রপ */}
                         <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 lg:hidden" onClick={() => setIsOpen(false)} />
                         
                         <div className="absolute top-20 left-4 right-4 bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 lg:hidden z-40 overflow-hidden animate-in slide-in-from-top-5">
