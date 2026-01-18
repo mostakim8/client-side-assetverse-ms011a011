@@ -4,9 +4,9 @@ import useAuth from "./UseAuth";
 
 const axiosSecure = axios.create({
     baseURL: 
-    // 'https://assetverse-server-side-ms011a011.vercel.app'
+    'https://assetverse-server-side-ms011a011.vercel.app'
     
-    'http://localhost:5001'
+    // 'http://localhost:5001'
 });
 
 const useAxiosSecure = () => {
