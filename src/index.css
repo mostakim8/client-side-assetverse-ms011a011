@@ -1,1 +1,12 @@
 @import "tailwindcss";
+/* Stripe Inspector বাটন হাইড করার জন্য */
+/* Stripe এর নিচের ইনস্পেক্টর বাটনটি হাইড করার জন্য */
+div[class*="StripeInspector"] {
+    display: none !important;
+}
+
+/* যদি আইফ্রেম হিসেবে থাকে তবে এটিও কাজ করবে */
+iframe[name="__privateStripeMetricsController0000"],
+iframe[name="__privateStripeController0000"] {
+    display: none !important;
+}

@@ -18,6 +18,7 @@ import EmployeeRoute from "../hooks/EmployeeRoute";
 import MyTeam from "../pages/MyTeam";
 import RequestAsset from "../pages/RequestAsset";
 import EmployeeHome from "../pages/EmployeeHome";
+import Payment from "../pages/dashboard/payment/Payment";
 
 const router = createBrowserRouter([
   {
@@ -69,6 +70,10 @@ const router = createBrowserRouter([
       {
         path: "upgrade-package",
         element: <HrRoute><UpgradePackage /></HrRoute>
+      },
+      { 
+        path: "payment", 
+        element: <HrRoute><Payment /></HrRoute> 
       },
       //employee protected routes 
 {

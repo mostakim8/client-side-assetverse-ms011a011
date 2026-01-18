@@ -127,8 +127,8 @@ const Navbar = () => {
                                         <UserCircle size={18} /> View Profile
                                     </NavLink>
                                     {role === 'hr' && (
-                                        <NavLink to="/upgrade" onClick={() => setProfileOpen(false)} className={linkStyle}>
-                                            <ArrowUpCircle size={18} className="text-orange-500" /> Upgrade Plan
+                                        <NavLink to="/upgrade-package" onClick={() => setProfileOpen(false)} className={linkStyle}>
+                                            <ArrowUpCircle size={18} className="text-orange-500" /> Upgrade Package
                                         </NavLink>
                                     )}
                                     <div className="h-px bg-gray-50 my-2" />

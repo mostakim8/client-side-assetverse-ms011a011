@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAuth from "../hooks/UseAuth";
 import useAxiosSecure from "../hooks/useAxiosSecure"; 
 import Swal from "sweetalert2";
-import { UserMinus, Users, Search, Loader2, UserCircle, ShieldCheck } from "lucide-react";
+import { UserMinus, Users, Search, Loader2, UserCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 
 const MyEmployeeList = () => {
@@ -22,7 +22,8 @@ const MyEmployeeList = () => {
         queryFn: async () => {
             const res = await axiosSecure.get(`/my-employees/${user?.email.toLowerCase()}?search=${debouncedSearch}`);
             return res.data;
-        }
+        },
+        // placeholderData: (prev) => prev, // React Query v5 হলে এটি ব্যবহার করুন পুরনো ডাটা ধরে রাখতে
     });
 
     const handleRemove = (id) => {
@@ -54,11 +55,7 @@ const MyEmployeeList = () => {
         });
     };
 
-    if (isLoading) return (
-        <div className="flex justify-center items-center min-h-screen bg-[#fcfcfd]">
-            <Loader2 className="animate-spin text-blue-600 w-12 h-12" />
-        </div>
-    );
+    // --- মনোযোগ দিন: এখানে আর 'if (isLoading) return' নেই যা পুরো পেজ বদলে দিত ---
 
     return (
         <div className="p-4 md:p-10 pt-28 min-h-screen bg-[#fcfcfd]">
@@ -78,67 +75,77 @@ const MyEmployeeList = () => {
                     </div>
 
                     <div className="relative w-full lg:w-96">
-                        <Search className="absolute top-1/2 -translate-y-1/2 left-5 text-gray-300" size={20} />
+                        <Search className={`absolute top-1/2 -translate-y-1/2 left-5 transition-colors ${isFetching ? 'text-blue-600' : 'text-gray-300'}`} size={20} />
                         <input 
                             type="text" 
                             placeholder="Search by name or email..." 
                             className="input w-full pl-14 h-16 bg-white border-none rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-600 outline-none font-medium transition-all"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
+                            autoFocus // পেজ লোড হলে কার্সার এখানে থাকবে
                         />
                         {isFetching && <Loader2 size={16} className="absolute right-5 top-1/2 -translate-y-1/2 animate-spin text-blue-600" />}
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-gray-200/40 border border-gray-100 overflow-hidden">
+                {/* Table Area */}
+                <div className="bg-white rounded-[2.5rem] shadow-xl shadow-gray-200/40 border border-gray-100 overflow-hidden min-h-[400px] relative">
                     <div className="overflow-x-auto">
-                        <table className="table w-full">
-                            <thead className="bg-gray-50/50">
-                                <tr className="text-gray-400 text-[10px] uppercase font-black text-center">
-                                    <th className="py-6 ">Image</th> 
-                                    <th>Name</th> 
-                                    <th>Email</th>
-                                    <th>Join Date</th>
-                                    <th>Type</th>
-                                    <th className="text-right pr-10">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody className="text-center">
-                                {employees.map((emp) => (
-                                    <tr key={emp._id} className="hover:bg-blue-50/30 transition-all border-b border-gray-50 last:border-0">
-                                        <td className="py-6 pl-10">
-                                            <img 
-                                                src={emp.photo || emp.image || emp.photoURL || "https://i.ibb.co/mJR7z1C/avatar.png"} 
-                                                className="w-12 h-12 rounded-2xl object-cover border border-gray-100 shadow-sm" 
-                                                alt=""
-                                                onError={(e) => { e.target.src = "https://i.ibb.co/mJR7z1C/avatar.png" }} 
-                                            />
-                                        </td>
-                                        <td>
-                                            <span className="font-black text-gray-800">{emp.name}</span>
-                                        </td>
-                                        <td className="text-gray-500 font-medium text-sm">{emp.email}</td>
-                                        <td className="text-gray-400 text-xs font-bold">{emp.joinedDate || "Pre-registered"}</td>
-                                        <td className="text-center">
-                                    
-                                                <span className="text-[10px] font-black uppercase bg-blue-300/10 text-blue-600 px-2 py-1 rounded-xl" >Employee</span>
-                                            
-                                        </td>
-                                        <td className="text-right pr-10">
-                                            <button 
-                                                onClick={() => handleRemove(emp._id)} 
-                                                className="p-3 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
-                                                title="Remove from Team"
-                                            >
-                                                <UserMinus size={20} />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {employees.length === 0 && (
+                        
+                        {/* প্রথমবার লোড হওয়ার সময় টেবিলের ভেতর স্পিনার */}
+                        {isLoading && employees.length === 0 ? (
+                            <div className="flex justify-center items-center py-32">
+                                <Loader2 className="animate-spin text-blue-600 w-12 h-12" />
+                            </div>
+                        ) : (
+                            <div className={isFetching ? "opacity-50 transition-opacity" : "opacity-100"}>
+                                <table className="table w-full">
+                                    <thead className="bg-gray-50/50">
+                                        <tr className="text-gray-400 text-[10px] uppercase font-black text-center">
+                                            <th className="py-6 pl-10 text-left">Image</th> 
+                                            <th>Name</th> 
+                                            <th>Email</th>
+                                            <th>Join Date</th>
+                                            <th>Type</th>
+                                            <th className="text-right pr-10">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-center">
+                                        {employees.map((emp) => (
+                                            <tr key={emp._id} className="hover:bg-blue-50/30 transition-all border-b border-gray-50 last:border-0">
+                                                <td className="py-6 pl-10 text-left">
+                                                    <img 
+                                                        src={emp.photo || emp.image || emp.photoURL || "https://i.ibb.co/mJR7z1C/avatar.png"} 
+                                                        className="w-12 h-12 rounded-2xl object-cover border border-gray-100 shadow-sm" 
+                                                        alt=""
+                                                        onError={(e) => { e.target.src = "https://i.ibb.co/mJR7z1C/avatar.png" }} 
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <span className="font-black text-gray-800">{emp.name}</span>
+                                                </td>
+                                                <td className="text-gray-500 font-medium text-sm">{emp.email}</td>
+                                                <td className="text-gray-400 text-xs font-bold">{emp.joinedDate || "Pre-registered"}</td>
+                                                <td className="text-center">
+                                                    <span className="text-[10px] font-black uppercase bg-blue-300/10 text-blue-600 px-2 py-1 rounded-xl">Employee</span>
+                                                </td>
+                                                <td className="text-right pr-10">
+                                                    <button 
+                                                        onClick={() => handleRemove(emp._id)} 
+                                                        className="p-3 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                                        title="Remove from Team"
+                                                    >
+                                                        <UserMinus size={20} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {employees.length === 0 && !isLoading && (
                             <div className="text-center py-20">
                                 <UserCircle size={40} className="mx-auto text-gray-200 mb-4" />
                                 <p className="text-gray-400 font-black uppercase text-xs">No Members Found</p>

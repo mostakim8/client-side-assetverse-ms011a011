@@ -19,22 +19,36 @@ const Login = () => {
     const onSubmit = async (data) => {
         try {
             const result = await signIn(data.email, data.password);
+            const userEmail = result.user.email;
             
             // JWT Token fetching and storing
-            const resToken = await axios.post(`${import.meta.env.VITE_API_URL}/jwt`, { email: result.user.email });
+            const resToken = await axios.post(`${import.meta.env.VITE_API_URL}/jwt`, { email: userEmail });
             if (resToken.data.token) {
                 localStorage.setItem('access-token', resToken.data.token);
             }
 
+            // Role check logic added as requested
+            const resRole = await axios.get(`${import.meta.env.VITE_API_URL}/users/role/${userEmail}`);
+            const userRole = resRole.data?.role;
+
             Swal.fire({
                 title: "Welcome Back!",
-                text: "Login Successful",
+                text: `Login Successful as ${userRole || 'User'}`,
                 icon: "success",
                 showConfirmButton: false,
                 timer: 1500,
                 borderRadius: '20px'
             });
-            navigate(from, { replace: true });
+
+            // Navigate based on role
+            if (userRole === 'hr') {
+                navigate('/hr-home', { replace: true });
+            } else if (userRole === 'employee') {
+                navigate('/employee-home', { replace: true });
+            } else {
+                navigate(from, { replace: true });
+            }
+
         } catch (error) {
             Swal.fire({
                 title: "Error",
@@ -49,11 +63,25 @@ const Login = () => {
     const handleGoogleSignIn = async () => {
         try {
             const result = await googleSignIn();
-            const res = await axios.post(`${import.meta.env.VITE_API_URL}/jwt`, { email: result.user.email });
+            const userEmail = result.user.email;
+
+            const res = await axios.post(`${import.meta.env.VITE_API_URL}/jwt`, { email: userEmail });
             if (res.data.token) {
                 localStorage.setItem('access-token', res.data.token);
             }
-            navigate(from, { replace: true });
+
+            // Role check logic for Google Sign-in
+            const resRole = await axios.get(`${import.meta.env.VITE_API_URL}/users/role/${userEmail}`);
+            const userRole = resRole.data?.role;
+
+            if (userRole === 'hr') {
+                navigate('/dashboard/hr-home', { replace: true });
+            } else if (userRole === 'employee') {
+                navigate('/dashboard/employee-home', { replace: true });
+            } else {
+                navigate(from, { replace: true });
+            }
+
         } catch (error) {
             Swal.fire("Error", "Google sign-in failed", "error");
         }
@@ -154,7 +182,7 @@ const Login = () => {
                     {/* Modal Content - Buttons */}
                     <div className="p-8 space-y-4 bg-gray-50/30">
                         
-                        {/*  Join as Employee Button */}
+                        {/* Join as Employee Button */}
                         <button 
                             onClick={() => {
                                 document.getElementById('register_selection_modal').close();
@@ -174,7 +202,7 @@ const Login = () => {
                             <ChevronRight className="text-gray-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
                         </button>
 
-                        {/*  Join as HR Manager Button */}
+                        {/* Join as HR Manager Button */}
                         <button 
                             onClick={() => {
                                 document.getElementById('register_selection_modal').close();
@@ -200,7 +228,6 @@ const Login = () => {
                     </div>
                 </div>
 
-                {/* Backdrop logic to close modal */}
                 <form method="dialog" className="modal-backdrop bg-gray-900/40 backdrop-blur-sm transition-all">
                     <button>close</button>
                 </form>
