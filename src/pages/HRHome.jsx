@@ -97,6 +97,7 @@ const HRHome = () => {
                             </form>
                         </div>
 
+
                         {/* Pending Requests */}
                         <div className="bg-white rounded-4xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="p-6 border-b border-gray-50 flex justify-between items-center">
