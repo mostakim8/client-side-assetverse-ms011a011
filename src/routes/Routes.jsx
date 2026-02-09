@@ -1,24 +1,34 @@
 import { createBrowserRouter } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
-import Home from "../pages/Home";
-import JoinEmployee from "../pages/JoinEmployee";
-import JoinHR from "../pages/JoinHR";
-import Login from "../pages/Login";
-import AddAsset from "../pages/AddAsset";
-import AssetList from "../pages/AssetList";
-import AllRequests from "../pages/AllRequests";
-import MyEmployeeList from "../pages/MyEmployeeList";
-import AddEmployee from "../pages/AddEmployee";
-import UpgradePackage from "../pages/UpgradePackage";
-import Profile from "../pages/Profile";
-import HRHome from "../pages/HRHome";
+
+// Shared Pages
+import Home from "../shared/Home";
+import Login from "../shared/Login";
+import JoinEmployee from "../shared/JoinEmployee";
+import JoinHR from "../shared/JoinHR";
+import Profile from "../shared/Profile";
+// HR Protected Routes
 import HrRoute from "../hooks/HrRoute"; 
-import MyAssets from "../pages/MyAssets";
+import HRHome from "../pages/hr/HRHome";
+import AddAsset from "../pages/hr/AddAsset";
+import AssetList from "../pages/hr/AssetList";
+import AllRequests from "../pages/hr/AllRequests";
+import MyEmployeeList from "../pages/hr/MyEmployeeList";
+import AddEmployee from "../pages/hr/AddEmployee";
+import UpgradePackage from "../pages/hr/UpgradePackage";
+
+// employees Protected Routes
 import EmployeeRoute from "../hooks/EmployeeRoute"; 
-import MyTeam from "../pages/MyTeam";
-import RequestAsset from "../pages/RequestAsset";
-import EmployeeHome from "../pages/EmployeeHome";
+import EmployeeHome from "../pages/employee/EmployeeHome";
+import MyAssets from "../pages/employee/MyAssets";
+import MyTeam from "../pages/employee/MyTeam";
+import RequestAsset from "../pages/employee/RequestAsset";
+import JoinCompany from "../pages/employee/JoinCompany";
+
+
+
 import Payment from "../pages/dashboard/payment/Payment";
+import PaymentSuccess from "../pages/dashboard/payment/PaymentSuccess";
 
 const router = createBrowserRouter([
   {
@@ -75,11 +85,20 @@ const router = createBrowserRouter([
         path: "payment", 
         element: <HrRoute><Payment /></HrRoute> 
       },
+      {
+        path:"payment-success",
+        element:<HrRoute><PaymentSuccess/></HrRoute>
+      },
       //employee protected routes 
-{
-  path: "employee-home",
-  element: <EmployeeRoute><EmployeeHome /></EmployeeRoute>
-},
+      {
+       path: "employee-home",
+       element: <EmployeeRoute><EmployeeHome /></EmployeeRoute>
+      },
+
+      {
+        path: "join-company",
+        element: <EmployeeRoute><JoinCompany /></EmployeeRoute>
+      },
       {
         path: "my-assets",
         element: <EmployeeRoute><MyAssets /></EmployeeRoute>

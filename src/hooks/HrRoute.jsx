@@ -15,12 +15,10 @@ const HrRoute = ({ children }) => {
             </div>
         );
     }
-
     // if user is logged in and role is hr, allow access to the route
     if (user && role === 'hr') {
         return children;
     }
-
     // if not authorized, redirect to home page
     return <Navigate to="/" state={{ from: location }} replace />;
 };

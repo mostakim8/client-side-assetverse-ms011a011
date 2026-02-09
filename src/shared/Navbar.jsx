@@ -1,19 +1,27 @@
-import { useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom"; 
+import { useState, useEffect, useContext } from "react";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom"; 
 import useAuth from "../hooks/UseAuth";
 import UseRole from "../hooks/UseRole";
+import { ThemeContext } from "../hooks/ThemeContext";
 import Swal from "sweetalert2";
 import { 
     LayoutDashboard, Box, PlusCircle, GitPullRequest, 
-    Users, ArrowUpCircle, UserCircle, LogOut, Menu, X, ChevronDown, Home, UserPlus 
+    Users, ArrowUpCircle, UserCircle, LogOut, Menu, X, ChevronDown, Home, UserPlus, Sun, Moon 
 } from "lucide-react";
 
 const Navbar = () => {
+    const { isDark, toggleTheme } = useContext(ThemeContext);
     const { user, logOut } = useAuth();
     const [role] = UseRole();
     const [isOpen, setIsOpen] = useState(false);
     const [profileOpen, setProfileOpen] = useState(false);
-    const navigate = useNavigate(); 
+    const navigate = useNavigate();
+    const location = useLocation(); 
+
+    useEffect(() => {
+        setIsOpen(false);
+        setProfileOpen(false);
+    }, [location.pathname]);
 
     const handleLogOut = () => {
         logOut()
@@ -21,78 +29,63 @@ const Navbar = () => {
                 Swal.fire({
                     icon: 'success',
                     title: 'Logged Out',
-                    text: 'Redirecting to Home...',
                     timer: 1500,
                     showConfirmButton: false,
-                    background: '#fff',
+                    background: isDark ? '#0f172a' : '#fff',
+                    color: isDark ? '#f8fafc' : '#1e293b',
                 });
                 navigate('/'); 
-                setIsOpen(false);
-                setProfileOpen(false);
             })
             .catch(error => console.log(error));
     };
 
-    const linkStyle = "flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-600 hover:text-blue-600 hover:bg-blue-50/50 rounded-xl transition-all duration-300 no-underline";
-    const activeStyle = "flex items-center gap-2 px-4 py-2 text-sm font-black text-blue-600 bg-blue-50 rounded-xl no-underline";
+    // Dark mode support added to styles
+    const linkStyle = "flex items-center gap-2 px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/50 dark:hover:bg-slate-800 rounded-xl transition-all duration-300 no-underline";
+    const activeStyle = "flex items-center gap-2 px-4 py-2 text-sm font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-slate-800 rounded-xl no-underline";
+    
+    const dropdownLinkStyle = "flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-xl transition-all no-underline";
 
     const menuItems = (
         <>
-            <li>
-                <NavLink to="/" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}>
-                    <Home size={16}/> Home
-                </NavLink>
-            </li>
-
+            <li><NavLink to="/" className={({ isActive }) => isActive ? activeStyle : linkStyle}><Home size={16}/> Home</NavLink></li>
             {!user && (
                 <>
-                    <li><NavLink to="/join-employee" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}>Join Employee</NavLink></li>
-                    <li><NavLink to="/join-hr" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}>Join HR Manager</NavLink></li>
+                    <li><NavLink to="/join-employee" className={({ isActive }) => isActive ? activeStyle : linkStyle}>Join Employee</NavLink></li>
+                    <li><NavLink to="/join-hr" className={({ isActive }) => isActive ? activeStyle : linkStyle}>Join HR Manager</NavLink></li>
                 </>
             )}
-
-            {/* HR Manager Links */}
             {user && role === 'hr' && (
                 <>
-                    <li><NavLink to="/add-asset" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><PlusCircle size={16}/> Add Asset</NavLink></li>
-                    <li><NavLink to="/asset-list" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><Box size={16}/> Asset List</NavLink></li> 
-                    <li><NavLink to="/all-requests" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><GitPullRequest size={16}/> All Requests</NavLink></li>
-                    {/* নতুন লিঙ্ক যোগ করা হয়েছে */}
-                    <li><NavLink to="/add-employee" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><UserPlus size={16}/> Add Employee</NavLink></li>
-                    <li><NavLink to="/my-employee-list" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><Users size={16}/> Employee List</NavLink></li>
-                    
+                    <li><NavLink to="/asset-list" className={({ isActive }) => isActive ? activeStyle : linkStyle}><Box size={16}/> Asset List</NavLink></li> 
+                    <li><NavLink to="/add-asset" className={({ isActive }) => isActive ? activeStyle : linkStyle}><PlusCircle size={16}/> Add Asset</NavLink></li>
+                    <li><NavLink to="/all-requests" className={({ isActive }) => isActive ? activeStyle : linkStyle}><GitPullRequest size={16}/> All Requests</NavLink></li>
+                    <li><NavLink to="/my-employee-list" className={({ isActive }) => isActive ? activeStyle : linkStyle}><Users size={16}/> My Employee</NavLink></li>
+                    <li><NavLink to="/add-employee" className={({ isActive }) => isActive ? activeStyle : linkStyle}><UserPlus size={16}/> Add Employee</NavLink></li>
                 </>
             )}
-
-            {/* Employee Links */}
             {user && role === 'employee' && (
                 <>
-                    <li><NavLink to="/my-assets" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><Box size={16}/> My Assets</NavLink></li>
-                    <li><NavLink to="/my-team" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><Users size={16}/> My Team</NavLink></li>
-                    <li><NavLink to="/request-asset" onClick={() => setIsOpen(false)} className={({ isActive }) => isActive ? activeStyle : linkStyle}><PlusCircle size={16}/> Request Asset</NavLink></li>
+                    <li><NavLink to="/my-assets" className={({ isActive }) => isActive ? activeStyle : linkStyle}><Box size={16}/> My Assets</NavLink></li>
+                    <li><NavLink to="/my-team" className={({ isActive }) => isActive ? activeStyle : linkStyle}><Users size={16}/> My Team</NavLink></li>
+                    <li><NavLink to="/request-asset" className={({ isActive }) => isActive ? activeStyle : linkStyle}><PlusCircle size={16}/> Request Asset</NavLink></li>
                 </>
             )}
         </>
     );
 
     return (
-        <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-md border-b border-gray-100 z-[100] h-20 flex items-center shadow-sm">
+        <nav className="fixed top-0 left-0 right-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-100 dark:border-slate-800 z-100 h-20 flex items-center shadow-sm transition-colors duration-300">
             <div className="max-w-7xl mx-auto w-full px-4 flex items-center justify-between">
                 
                 <div className="flex items-center gap-2">
-                    <button 
-                        onClick={() => setIsOpen(!isOpen)} 
-                        className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-xl transition-colors"
-                    >
+                    <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
                         {isOpen ? <X size={24} /> : <Menu size={24} />}
                     </button>
                     <Link to="/" className="flex items-center gap-2 no-underline group">
                         <div className="bg-blue-600 p-2 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-blue-200">
                             <LayoutDashboard className="text-white" size={20} />
                         </div>
-                        <span className="text-xl font-black text-gray-900 tracking-tighter">
-                            Asset<span className="text-blue-600">Verse</span>
-                        </span>
+                        <span className="text-xl font-black text-gray-900 dark:text-white tracking-tighter">Asset<span className="text-blue-600">Verse</span></span>
                     </Link>
                 </div>
 
@@ -103,64 +96,53 @@ const Navbar = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
+                    {/* Theme Toggle Button */}
+                    <button 
+                        onClick={toggleTheme} 
+                        className="p-2.5 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-yellow-400 hover:ring-2 ring-blue-500 transition-all"
+                    >
+                        {isDark ? <Sun size={20} /> : <Moon size={20} />}
+                    </button>
+
                     {user ? (
                         <div className="relative">
-                            <div 
-                                onClick={() => setProfileOpen(!profileOpen)}
-                                className="flex items-center gap-3 p-1.5 pr-3 hover:bg-gray-50 rounded-2xl cursor-pointer transition-all border border-transparent hover:border-gray-100"
-                            >
-                                <img 
-                                    className="w-10 h-10 rounded-xl object-cover shadow-sm border border-blue-100" 
-                                    src={user?.photoURL || "https://i.ibb.co/mJR7z1C/avatar.png"} 
-                                    alt="profile" 
-                                />
+                            <div onClick={() => setProfileOpen(!profileOpen)} className="flex items-center gap-3 p-1.5 pr-3 hover:bg-gray-50 dark:hover:bg-slate-800 rounded-2xl cursor-pointer transition-all border border-transparent hover:border-gray-100 dark:hover:border-slate-700">
+                                <img className="w-10 h-10 rounded-xl object-cover shadow-sm border border-blue-100 dark:border-slate-700" src={user?.photoURL || "https://i.ibb.co/mJR7z1C/avatar.png"} alt="profile" />
                                 <div className="hidden md:block text-left leading-tight">
-                                    <p className="text-sm font-black text-gray-800 m-0">{user?.displayName?.split(' ')[0]}</p>
-                                    <span className="text-[10px] uppercase text-blue-500 font-bold tracking-widest">{role}</span>
+                                    <p className="text-sm font-black text-gray-800 dark:text-gray-200 m-0">{user?.displayName?.split(' ')[0]}</p>
+                                    <span className="text-[10px] uppercase text-blue-500 font-bold tracking-widest">{role || 'User'}</span>
                                 </div>
                                 <ChevronDown size={14} className={`text-gray-400 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
                             </div>
 
                             {profileOpen && (
-                                <div className="absolute top-14 right-0 w-56 bg-white rounded-2xl shadow-2xl border border-gray-50 p-2 z-50 animate-in fade-in slide-in-from-top-2">
-                                    <NavLink to="/profile" onClick={() => setProfileOpen(false)} className={linkStyle}>
-                                        <UserCircle size={18} /> View Profile
-                                    </NavLink>
+                                <div className="absolute top-14 right-0 w-56 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-50 dark:border-slate-700 p-2 z-50 animate-in fade-in slide-in-from-top-2">
+                                    <Link to="/profile" className={dropdownLinkStyle}><UserCircle size={18} /> View Profile</Link>
                                     {role === 'hr' && (
-                                        <NavLink to="/upgrade-package" onClick={() => setProfileOpen(false)} className={linkStyle}>
-                                            <ArrowUpCircle size={18} className="text-orange-500" /> Upgrade Package
-                                        </NavLink>
+                                        <Link to="/upgrade-package" className={dropdownLinkStyle}><ArrowUpCircle size={18} className="text-orange-500" /> Upgrade Package</Link>
                                     )}
-                                    <div className="h-px bg-gray-50 my-2" />
-                                    <button 
-                                        onClick={handleLogOut} 
-                                        className="w-full flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                                    >
+                                    <div className="h-px bg-gray-50 dark:bg-slate-700 my-2" />
+                                    <button onClick={handleLogOut} className="w-full flex items-center gap-2 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all">
                                         <LogOut size={18} /> Logout
                                     </button>
                                 </div>
                             )}
                         </div>
                     ) : (
-                        <Link to="/login" className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-sm no-underline hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95">
-                            Login
-                        </Link>
+                        <Link to="/login" className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black text-sm no-underline hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all active:scale-95">Login</Link>
                     )}
                 </div>
 
+                {/* Mobile Menu */}
                 {isOpen && (
                     <>
-                        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30 lg:hidden" onClick={() => setIsOpen(false)} />
-                        
-                        <div className="absolute top-20 left-4 right-4 bg-white rounded-[2.5rem] shadow-2xl border border-gray-100 lg:hidden z-40 overflow-hidden animate-in slide-in-from-top-5">
+                        <div className="fixed inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm z-30 lg:hidden" onClick={() => setIsOpen(false)} />
+                        <div className="absolute top-20 left-4 right-4 bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-slate-800 lg:hidden z-40 overflow-hidden">
                             <ul className="flex flex-col p-6 gap-2 list-none m-0">
                                 {menuItems}
                                 {user && (
-                                    <li className="pt-4 mt-4 border-t border-gray-50">
-                                        <button 
-                                            onClick={handleLogOut} 
-                                            className="w-full flex justify-center items-center gap-2 py-4 bg-red-50 text-red-600 rounded-2xl font-black text-sm hover:bg-red-100 transition-colors"
-                                        >
+                                    <li className="pt-4 mt-4 border-t border-gray-50 dark:border-slate-800">
+                                        <button onClick={handleLogOut} className="w-full flex justify-center items-center gap-2 py-4 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-2xl font-black text-sm hover:bg-red-100 transition-colors">
                                             <LogOut size={18} /> Logout
                                         </button>
                                     </li>

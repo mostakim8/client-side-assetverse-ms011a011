@@ -1,12 +1,37 @@
 @import "tailwindcss";
-/* Stripe Inspector বাটন হাইড করার জন্য */
-/* Stripe এর নিচের ইনস্পেক্টর বাটনটি হাইড করার জন্য */
-div[class*="StripeInspector"] {
-    display: none !important;
+
+@variant dark (&:where(.dark, .dark *));
+
+
+@layer base {
+    html {
+        
+        background-color: white;
+        color: #0f172a;
+    }
+
+    html.dark {
+        
+        background-color: #020617;
+        /* slate-950 */
+        color: #f8fafc;
+        /* slate-50 */
+    }
+
+    body {
+        @apply transition-colors duration-300 min-h-screen;
+    }
 }
 
-/* যদি আইফ্রেম হিসেবে থাকে তবে এটিও কাজ করবে */
-iframe[name="__privateStripeMetricsController0000"],
-iframe[name="__privateStripeController0000"] {
+
+.StripeInspector,
+.StripeInspector-root,
+.StripeInspector-badge {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+iframe[name^="__privateStripeController"] {
     display: none !important;
 }
