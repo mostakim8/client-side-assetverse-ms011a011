@@ -1,271 +1,452 @@
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../hooks/UseAuth";
-import useAxiosSecure from "../../hooks/useAxiosSecure"; 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { 
-    AlertCircle, Clock, PieChart as ChartIcon, 
-    User, TrendingUp, Megaphone, Send, Sparkles, 
-    Layers, Type, Flag
+import useAxiosSecure from "../../hooks/useAxiosSecure";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
+import {
+  AlertCircle,
+  Clock,
+  PieChart as ChartIcon,
+  User,
+  TrendingUp,
+  Megaphone,
+  Send,
+  Sparkles,
+  Layers,
+  Type,
+  Flag,
+  Users,
+  Package,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import { useContext } from "react"; 
+import { useContext } from "react";
 import { ThemeContext } from "../../hooks/ThemeContext";
 
+// Swiper Imports
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, Pagination, EffectFade } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+import "swiper/css/effect-fade";
+
 const HRHome = () => {
-    const { user } = useAuth();
-    const axiosSecure = useAxiosSecure(); 
-    const { isDark } = useContext(ThemeContext);
+  const { user } = useAuth();
+  const axiosSecure = useAxiosSecure();
+  const { isDark } = useContext(ThemeContext);
+  const interFont = { fontFamily: "'Inter', sans-serif" };
 
-    const { data: stats = {}, isLoading, refetch: refetchStats } = useQuery({
-        queryKey: ['hr-stats', user?.email],
-        enabled: !!user?.email, 
-        queryFn: async () => {
-            const res = await axiosSecure.get(`/hr-stats/${user?.email}`);
-            return res.data;
-        }
-    });
+  const {
+    data: stats = {},
+    isLoading,
+    refetch: refetchStats,
+  } = useQuery({
+    queryKey: ["hr-stats", user?.email],
+    enabled: !!user?.email,
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/hr-stats/${user?.email}`);
+      return res.data;
+    },
+  });
 
-    const handlePostNotice = async (e) => {
-        e.preventDefault();
-        const form = e.target;
-        const noticeData = {
-            title: form.title.value,
-            message: form.message.value,
-            priority: form.priority.value, 
-            hrEmail: user.email,
-            hrName: user.displayName,
-            createdAt: new Date()
-        };
+  const sliderData = [
+    {
+      title:
+        "Strategic <span class='text-[#9290C3] uppercase italic'>Team</span> Management",
+      desc: "Connect your global workforce and monitor resource allocation efficiency.",
+      img: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=1200",
+    },
+    {
+      title:
+        "Asset <span class='text-[#9290C3] uppercase italic'>Intelligence</span>",
+      desc: "Real-time tracking of returnable equipment and inventory health.",
+      img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1200",
+    },
+    {
+      title:
+        "Broadcast <span class='text-[#9290C3] uppercase italic'>Protocol</span>",
+      desc: "Deploy critical announcements across the organization instantly.",
+      img: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=1200",
+    },
+  ];
 
-        try {
-            const res = await axiosSecure.post('/notices', noticeData);
-            if (res.data.insertedId) {
-                Swal.fire({
-                    title: "Published!",
-                    text: "Your announcement is now visible to everyone.",
-                    icon: "success",
-                    background: isDark ? '#1e293b' : '#fff',
-                    color: isDark ? '#f8fafc' : '#1e293b',
-                    confirmButtonColor: '#2563eb',
-                    timer: 2000
-                });
-                form.reset();
-            }
-        } catch (error) {
-            Swal.fire("Error", "Failed to post notice", "error");
-        }
+  const handlePostNotice = async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const noticeData = {
+      title: form.title.value,
+      message: form.message.value,
+      priority: form.priority.value,
+      hrEmail: user.email,
+      hrName: user.displayName,
+      createdAt: new Date(),
     };
 
-    const COLORS = ['#3b82f6', '#f59e0b'];
+    try {
+      const res = await axiosSecure.post("/notices", noticeData);
+      if (res.data.insertedId) {
+        Swal.fire({
+          title: "NOTICE DEPLOYED",
+          text: "Protocol update shared with the team successfully.",
+          icon: "success",
+          background: isDark ? "#070F2B" : "#fff",
+          color: isDark ? "#9290C3" : "#070F2B",
+          confirmButtonColor: "#1B1A55",
+          customClass: {
+            title: "font-black uppercase italic tracking-widest text-sm",
+            confirmButton:
+              "font-black uppercase italic tracking-[0.2em] text-[10px] py-4 px-8 rounded-xl",
+          },
+        });
+        form.reset();
+      }
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: "Notice failed to deploy",
+        icon: "error",
+      });
+    }
+  };
 
-    if (isLoading) return (
-        <div className="flex flex-col justify-center items-center min-h-screen bg-gray-50 dark:bg-slate-950">
-            <span className="loading loading-bars loading-lg text-blue-600"></span>
-        </div>
+  const COLORS = ["#1B1A55", "#9290C3"];
+
+  if (isLoading)
+    return (
+      <div
+        style={interFont}
+        className="flex flex-col justify-center items-center min-h-screen bg-white dark:bg-[#070F2B]"
+      >
+        <div className="w-16 h-16 border-4 border-[#535C91]/20 border-t-[#9290C3] rounded-full animate-spin"></div>
+        <p className="mt-4 font-black text-[#535C91] tracking-[0.4em] text-[9px] uppercase italic">
+          System Syncing...
+        </p>
+      </div>
     );
 
-   return (
-    <div className="p-4 md:p-10 pt-28 min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-300">
-        <div className="max-w-7xl mx-auto">
-            
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-4">
-                <div>
-                    <h2 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-                        <Sparkles className="text-blue-600" /> HR <span className="text-blue-600 italic">Insights</span>
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 font-bold mt-2 flex items-center gap-2">
-                         Welcome back, {user?.displayName} 
-                    </p>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                
-                <div className="lg:col-span-8 space-y-10">
-                    
-                    {/* NOTICE BOARD */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-blue-900/5 border border-slate-100 dark:border-slate-800 overflow-hidden relative transition-colors">
-                        <div className="absolute top-0 right-0 p-8 opacity-5 dark:opacity-10 text-slate-900 dark:text-white">
-                            <Megaphone size={120} />
-                        </div>
-                        
-                        <div className="p-8 md:p-10">
-                            <div className="flex items-center gap-4 mb-8">
-                                <div className="p-3 bg-blue-600 rounded-2xl text-white shadow-lg shadow-blue-200 dark:shadow-none">
-                                    <Megaphone size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter">Quick Announcement</h3>
-                                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500">BROADCAST UPDATES TO YOUR TEAM</p>
-                                </div>
-                            </div>
-
-                            <form onSubmit={handlePostNotice} className="space-y-6">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase ml-1 flex items-center gap-2">
-                                            <Type size={12}/> Title
-                                        </label>
-                                        <input name="title" placeholder="write notice title here" 
-                                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-blue-50 dark:focus:ring-blue-900/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-700 dark:text-slate-200 placeholder:text-slate-300 dark:placeholder:text-slate-600" required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase ml-1 flex items-center gap-2">
-                                            <Flag size={12}/> Priority Level
-                                        </label>
-                                        <select name="priority" 
-                                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-blue-50 dark:focus:ring-blue-900/20 focus:border-blue-500 outline-none transition-all font-bold text-slate-600 dark:text-slate-300 appearance-none" required>
-                                            <option value="Low">Low Priority</option>
-                                            <option value="Medium">Medium Priority</option>
-                                            <option value="High">High Priority</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase ml-1 flex items-center gap-2">
-                                        <Layers size={12}/> Announcement Content
-                                    </label>
-                                    <textarea name="message" placeholder=" write your announcement here" 
-                                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-blue-50 dark:focus:ring-blue-900/20 focus:border-blue-500 outline-none transition-all font-medium text-slate-700 dark:text-slate-200 h-32 resize-none placeholder:text-slate-300 dark:placeholder:text-slate-600" required></textarea>
-                                </div>
-
-                                <button type="submit" 
-                                    className="group w-full py-4 bg-slate-900 dark:bg-blue-600 hover:bg-blue-600 dark:hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs transition-all duration-300 flex items-center justify-center gap-3 shadow-xl shadow-slate-200 dark:shadow-none active:scale-95">
-                                    <Send size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 
-                                    Post Announcement
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-
-                    {/* Pending Requests Table */}
-                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 overflow-hidden transition-colors">
-                        <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/50">
-                            <h3 className="font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 uppercase text-sm tracking-widest">
-                                <Clock className="text-blue-600" size={18} /> Recent Pending Requests
-                            </h3>
-                        </div>
-                        <div className="overflow-x-auto">
-                            <table className="table w-full border-collapse">
-                                <thead>
-                                    <tr className="text-slate-400 dark:text-slate-500 text-[10px] uppercase font-black border-b border-slate-50 dark:border-slate-800">
-                                        <th className="p-6">Asset Name</th>
-                                        <th>Requester</th>
-                                        <th className="text-right pr-8">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {stats.pendingRequests?.slice(0, 5).map((req) => (
-                                        <tr key={req._id} className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors border-b border-slate-50 dark:border-slate-800">
-                                            <td className="p-6 font-bold text-slate-700 dark:text-slate-300">{req.productName}</td>
-                                            <td>
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
-                                                        <User size={14}/>
-                                                    </div>
-                                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-400">{req.userName}</span>
-                                                </div>
-                                            </td>
-                                            <td className="text-right pr-8">
-                                                <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase rounded-full border border-amber-100 dark:border-amber-900/50">Pending</span>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    {/* Inventory & Trends Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-colors">
-                            <h3 className="font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 uppercase text-sm mb-6 tracking-widest">
-                                <TrendingUp className="text-emerald-500" size={18} /> Top Trends
-                            </h3>
-                            <div className="space-y-4">
-                                {stats.topRequested?.slice(0, 3).map((item, idx) => (
-                                    <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl flex justify-between items-center border border-slate-100 dark:border-slate-700 group hover:border-blue-200 dark:hover:border-blue-800 transition-all">
-                                        <span className="font-bold text-slate-700 dark:text-slate-300">{item.productName}</span>
-                                        <span className="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 px-3 py-1 rounded-xl text-[10px] font-black">{item.count} REQS</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 transition-colors">
-                            <h3 className="font-black text-slate-800 dark:text-slate-200 flex items-center gap-2 uppercase text-sm mb-6 tracking-widest">
-                                <AlertCircle className="text-rose-500" size={18} /> Low Stock
-                            </h3>
-                            <div className="space-y-4">
-                                {stats.limitedStock?.slice(0, 3).map((item) => (
-                                    <div key={item._id} className="p-4 bg-rose-50 dark:bg-rose-900/30 border border-rose-100 dark:border-rose-900/50 rounded-2xl flex justify-between items-center">
-                                        <p className="font-bold text-rose-900 dark:text-rose-200">{item.productName}</p>
-                                        <p className="text-rose-600 dark:text-rose-400 font-black text-lg">{item.productQuantity}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Side: Analytics */}
-                <div className="lg:col-span-4">
-                    <div className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-100 dark:border-slate-800 sticky top-28 transition-colors">
-                        <div className="mb-8">
-                            <h3 className="text-xl font-black text-slate-800 dark:text-slate-100 uppercase tracking-tighter flex items-center gap-2">
-                                <ChartIcon className="text-blue-600" size={20} /> Request Ratio
-                            </h3>
-                            <p className="text-xs font-bold text-slate-400 dark:text-slate-500 mt-1 uppercase">Returnable vs Non-Returnable</p>
-                        </div>
-                        
-                        <div className="h-72 w-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={stats.chartData || []}
-                                        innerRadius={65}
-                                        outerRadius={90}
-                                        paddingAngle={8}
-                                        dataKey="value"
-                                    >
-                                        {stats.chartData?.map((entry, index) => (
-                                            <Cell key={index} fill={COLORS[index % COLORS.length]} className="outline-none" />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip 
-                                        contentStyle={{ 
-                                            borderRadius: '20px', 
-                                            border: 'none', 
-                                            boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
-                                            backgroundColor: isDark ? '#1e293b' : '#fff', 
-                                            color: isDark ? '#f8fafc' : '#1e293b'
-                                        }}
-                                        itemStyle={{ color: isDark ? '#f8fafc' : '#1e293b' }}
-                                    />
-                                    <Legend verticalAlign="bottom" wrapperStyle={{ paddingTop: '20px', fontWeight: 'bold', fontSize: '12px' }} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        <div className="mt-8 pt-8 border-t border-slate-50 dark:border-slate-800 space-y-4">
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Total Assets</span>
-                                <span className="font-black text-slate-700 dark:text-slate-300">{stats.totalAssets || 0}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Active Requests</span>
-                                <span className="font-black text-slate-700 dark:text-slate-300">{stats.pendingRequests?.length || 0}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+  return (
+    <div
+      style={interFont}
+      className="p-4 md:p-10 pt-28 min-h-screen bg-white dark:bg-[#070F2B] transition-colors duration-500"
+    >
+      <div className="max-w-7xl mx-auto">
+        {/* Dashboard Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-16 gap-4">
+          <div>
+            <span className="text-[10px] font-black text-[#535C91] tracking-[0.5em] uppercase italic opacity-60">
+              Admin Terminal
+            </span>
+            <h2 className="text-4xl font-black text-[#070F2B] dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
+              HR <span className="text-[#9290C3]">Intelligence</span>
+            </h2>
+            <p className="text-[#535C91] dark:text-[#9290C3]/50 font-black text-[10px] tracking-[0.2em] uppercase italic mt-1">
+              Operator: {user?.displayName}
+            </p>
+          </div>
         </div>
+
+        {/* Dynamic Swiper - Hero Banner */}
+        <div className="mb-16 rounded-[2.5rem] overflow-hidden border border-gray-100 dark:border-[#535C91]/10 shadow-2xl relative group">
+          <Swiper
+            modules={[Autoplay, Pagination, EffectFade]}
+            effect="fade"
+            autoplay={{ delay: 6000 }}
+            pagination={{ clickable: true }}
+            className="h-[400px]"
+          >
+            {sliderData.map((slide, idx) => (
+              <SwiperSlide key={idx}>
+                <div className="relative w-full h-full">
+                  <img
+                    src={slide.img}
+                    className="absolute inset-0 w-full h-full object-cover grayscale opacity-60"
+                    alt="Slider"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#070F2B] via-[#070F2B]/80 to-transparent"></div>
+                  <div className="relative h-full flex flex-col justify-center px-12 md:px-24 max-w-3xl">
+                    <h1
+                      className="text-4xl md:text-5xl font-black text-white italic tracking-tighter uppercase mb-4"
+                      dangerouslySetInnerHTML={{ __html: slide.title }}
+                    />
+                    <p className="text-[#9290C3] font-black text-[10px] tracking-[0.3em] uppercase italic leading-relaxed opacity-80">
+                      {slide.desc}
+                    </p>
+                  </div>
+                </div>
+              </SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
+
+        {/* Core Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          {[
+            {
+              label: "Active Team",
+              value: stats.teamCount || 0,
+              icon: <Users size={16} />,
+              color: "bg-[#1B1A55]",
+            },
+            {
+              label: "Global Assets",
+              value: stats.totalAssets || 0,
+              icon: <Package size={16} />,
+              color: "bg-[#535C91]",
+            },
+            {
+              label: "Alert Req",
+              value: stats.pendingRequests?.length || 0,
+              icon: <Clock size={16} />,
+              color: "bg-[#1B1A55]",
+            },
+            {
+              label: "Efficiency",
+              value: "98.2%",
+              icon: <TrendingUp size={16} />,
+              color: "bg-[#535C91]",
+            },
+          ].map((stat, i) => (
+            <div
+              key={i}
+              className="bg-white dark:bg-[#1B1A55]/10 p-8 rounded-3xl border border-gray-100 dark:border-[#535C91]/10 flex items-center gap-6 hover:border-[#9290C3]/30 transition-all group"
+            >
+              <div
+                className={`w-12 h-12 ${stat.color} text-white rounded-xl shadow-lg flex items-center justify-center group-hover:scale-110 transition-transform`}
+              >
+                {stat.icon}
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-[#535C91] tracking-[0.4em] uppercase italic opacity-60 mb-1">
+                  {stat.label}
+                </p>
+                <h4 className="text-2xl font-black text-[#070F2B] dark:text-white tracking-tighter italic">
+                  {stat.value}
+                </h4>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Main Terminal Column */}
+          <div className="lg:col-span-8 space-y-12">
+            {/* Announcement Terminal */}
+            <div className="bg-white dark:bg-[#1B1A55]/10 rounded-[2.5rem] border border-gray-100 dark:border-[#535C91]/10 overflow-hidden relative">
+              <div className="p-10">
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="w-10 h-10 bg-[#1B1A55] dark:bg-white text-white dark:text-[#070F2B] rounded-xl flex items-center justify-center shadow-lg">
+                    <Megaphone size={18} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black text-[#070F2B] dark:text-white uppercase tracking-[0.3em] italic">
+                      Deploy Broadcast
+                    </h3>
+                    <p className="text-[9px] font-black text-[#535C91] dark:text-[#9290C3]/40 uppercase tracking-widest mt-0.5">
+                      Global Protocol Update
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handlePostNotice} className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-[#535C91] uppercase tracking-[0.3em] ml-1 italic opacity-60">
+                        Terminal Header
+                      </label>
+                      <input
+                        name="title"
+                        placeholder="ENTER SUBJECT..."
+                        className="w-full px-6 py-4 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/20 rounded-xl focus:border-[#9290C3] outline-none transition-all font-black text-[11px] uppercase tracking-widest italic dark:text-white placeholder:opacity-30"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black text-[#535C91] uppercase tracking-[0.3em] ml-1 italic opacity-60">
+                        Priority Code
+                      </label>
+                      <select
+                        name="priority"
+                        className="w-full px-6 py-4 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/20 rounded-xl focus:border-[#9290C3] outline-none font-black text-[11px] uppercase tracking-widest italic dark:text-white appearance-none"
+                        required
+                      >
+                        <option value="Low">Low - System</option>
+                        <option value="Medium">Medium - Operation</option>
+                        <option value="High">High - Critical</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[9px] font-black text-[#535C91] uppercase tracking-[0.3em] ml-1 italic opacity-60">
+                      Message Payload
+                    </label>
+                    <textarea
+                      name="message"
+                      placeholder="ENTER DATA PACKET..."
+                      className="w-full px-6 py-4 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/20 rounded-xl focus:border-[#9290C3] outline-none font-black text-[11px] tracking-widest uppercase italic dark:text-white h-32 resize-none placeholder:opacity-30"
+                      required
+                    ></textarea>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full py-5 bg-[#1B1A55] dark:bg-white text-white dark:text-[#070F2B] rounded-xl font-black tracking-[0.4em] text-[10px] uppercase italic transition-all hover:bg-[#535C91] dark:hover:bg-[#9290C3] active:scale-[0.98] shadow-xl flex items-center justify-center gap-3"
+                  >
+                    <Send size={14} /> Execute Deployment
+                  </button>
+                </form>
+              </div>
+            </div>
+
+            {/* Request Log Table */}
+            <div className="bg-white dark:bg-[#1B1A55]/10 rounded-[2.5rem] border border-gray-100 dark:border-[#535C91]/10 overflow-hidden">
+              <div className="p-8 border-b border-gray-100 dark:border-[#535C91]/10 flex justify-between items-center">
+                <h3 className="text-xs font-black text-[#070F2B] dark:text-white uppercase tracking-[0.3em] italic flex items-center gap-2">
+                  <Clock size={16} /> Pending Requests Queue
+                </h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-[#535C91]/10">
+                      <th className="p-8 text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#535C91] italic opacity-60">
+                        Asset Unit
+                      </th>
+                      <th className="text-left text-[9px] font-black uppercase tracking-[0.4em] text-[#535C91] italic opacity-60">
+                        Personnel
+                      </th>
+                      <th className="text-right pr-8 text-[9px] font-black uppercase tracking-[0.4em] text-[#535C91] italic opacity-60">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-[#535C91]/5">
+                    {stats.pendingRequests?.slice(0, 5).map((req) => (
+                      <tr
+                        key={req._id}
+                        className="hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                      >
+                        <td className="p-8 font-black text-[11px] text-[#070F2B] dark:text-white uppercase italic tracking-widest">
+                          {req.productName}
+                        </td>
+                        <td className="text-[11px] font-black text-[#535C91] dark:text-[#9290C3]/60 uppercase italic tracking-widest">
+                          {req.userName}
+                        </td>
+                        <td className="text-right pr-8">
+                          <span className="px-4 py-1.5 border border-amber-500/30 text-amber-500 text-[8px] font-black uppercase italic tracking-widest rounded-lg bg-amber-500/5">
+                            Await Approval
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* Intelligence Column (Right) */}
+          <div className="lg:col-span-4 space-y-10">
+            <div className="bg-white dark:bg-[#1B1A55]/10 p-10 rounded-[3rem] border border-gray-100 dark:border-[#535C91]/10 sticky top-28">
+              <div className="mb-10">
+                <h3 className="text-xs font-black text-[#070F2B] dark:text-white uppercase tracking-[0.3em] italic flex items-center gap-2">
+                  <ChartIcon size={16} className="text-[#9290C3]" /> Inventory
+                  Ratio
+                </h3>
+              </div>
+
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.chartData || []}
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={10}
+                      dataKey="value"
+                    >
+                      {stats.chartData?.map((entry, index) => (
+                        <Cell
+                          key={index}
+                          fill={COLORS[index % COLORS.length]}
+                        />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: "#070F2B",
+                        border: "none",
+                        borderRadius: "15px",
+                        fontSize: "10px",
+                        color: "#fff",
+                        fontWeight: "bold",
+                      }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="mt-10 space-y-4">
+                {[
+                  {
+                    l: "Stock Health",
+                    v: "Optimal",
+                    c: "text-[#1B1A55] dark:text-white",
+                  },
+                  {
+                    l: "Cycle Time",
+                    v: "4.2 Days",
+                    c: "text-[#1B1A55] dark:text-white",
+                  },
+                ].map((d, i) => (
+                  <div
+                    key={i}
+                    className="flex justify-between items-center py-3 border-b border-gray-50 dark:border-[#535C91]/10"
+                  >
+                    <span className="text-[9px] font-black text-[#535C91] uppercase tracking-[0.3em] italic">
+                      {d.l}
+                    </span>
+                    <span
+                      className={`text-[11px] font-black uppercase italic tracking-widest ${d.c}`}
+                    >
+                      {d.v}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Low Stock Alerts */}
+            <div className="bg-rose-500/5 dark:bg-rose-500/10 p-8 rounded-[2.5rem] border border-rose-500/20">
+              <h3 className="text-[10px] font-black text-rose-500 uppercase tracking-[0.3em] italic mb-6 flex items-center gap-2">
+                <AlertCircle size={14} /> Low Inventory Alert
+              </h3>
+              <div className="space-y-3">
+                {stats.limitedStock?.slice(0, 3).map((item) => (
+                  <div
+                    key={item._id}
+                    className="p-4 bg-white dark:bg-[#070F2B] rounded-xl flex justify-between items-center border border-rose-500/10"
+                  >
+                    <span className="text-[10px] font-black text-[#070F2B] dark:text-white uppercase italic tracking-widest">
+                      {item.productName}
+                    </span>
+                    <span className="text-rose-500 font-black italic">
+                      {item.productQuantity} UNIT
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-);
+  );
 };
 
 export default HRHome;

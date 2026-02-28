@@ -1,346 +1,406 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect, useContext } from "react";
-import useAuth from "../../hooks/UseAuth"; 
-import { ThemeContext } from "../../hooks/ThemeContext"; 
-import useAxiosSecure from "../../hooks/useAxiosSecure"; 
+import useAuth from "../../hooks/UseAuth";
+import { ThemeContext } from "../../hooks/ThemeContext";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
 import Swal from "sweetalert2";
-import { 
-    Search, Loader2, PackagePlus, Building2, 
-    UserPlus, LayoutGrid, Filter, ArrowUpRight, 
-    ChevronLeft, ChevronRight 
+import {
+  Search,
+  Loader2,
+  PackagePlus,
+  Building2,
+  UserPlus,
+  LayoutGrid,
+  Filter,
+  ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
+  Users,
 } from "lucide-react";
 
 const RequestAsset = () => {
-    const { user } = useAuth();
-    const { isDark } = useContext(ThemeContext);
-    const axiosSecure = useAxiosSecure(); 
-    const [activeTab, setActiveTab] = useState("inventory"); 
-    const [searchTerm, setSearchTerm] = useState("");
-    const [debouncedSearch, setDebouncedSearch] = useState("");
-    const [filterType, setFilterType] = useState("");
-    const [selectedAsset, setSelectedAsset] = useState(null);
-    
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 8; 
+  const { user } = useAuth();
+  const { isDark } = useContext(ThemeContext);
+  const axiosSecure = useAxiosSecure();
+  const [activeTab, setActiveTab] = useState("inventory");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filterType, setFilterType] = useState("");
+  const [selectedAsset, setSelectedAsset] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedSearch(searchTerm);
-            setCurrentPage(1); 
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [searchTerm]);
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [filterType]);
+  const { data: userData = {}, isLoading: userLoading } = useQuery({
+    queryKey: ["user-info", user?.email],
+    enabled: !!user?.email,
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/users/${user?.email.toLowerCase()}`);
+      return res.data;
+    },
+  });
 
+  const {
+    data: assetsData = { result: [], totalCount: 0 },
+    isLoading: assetsLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["all-assets", debouncedSearch, filterType, currentPage],
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/all-assets`, {
+        params: {
+          search: debouncedSearch,
+          type: filterType,
+          page: currentPage,
+          limit: itemsPerPage,
+        },
+      });
+      return res.data;
+    },
+  });
 
-    const { data: userData = {}, isLoading: userLoading } = useQuery({
-        queryKey: ['user-info', user?.email],
-        enabled: !!user?.email,
-        queryFn: async () => {
-            const res = await axiosSecure.get(`/users/${user?.email.toLowerCase()}`);
-            return res.data;
-        }
-    });
+  const allAssets = assetsData.result || [];
+  const totalPages = Math.ceil((assetsData.totalCount || 0) / itemsPerPage);
 
-    // assets fetching with search, filter, and pagination
-    const { data: assetsData = { result: [], totalCount: 0 }, isLoading: assetsLoading, refetch } = useQuery({
-        queryKey: ['all-assets', debouncedSearch, filterType, currentPage],
-        queryFn: async () => {
-            const res = await axiosSecure.get(`/all-assets`, {
-                params: { 
-                    search: debouncedSearch, 
-                    type: filterType,
-                    page: currentPage,
-                    limit: itemsPerPage
-                }
-            });
-            return res.data;
-        }
-    });
+  const { data: companies = [], isLoading: companiesLoading } = useQuery({
+    queryKey: ["all-hr-companies"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/hr-companies");
+      return res.data;
+    },
+  });
 
-    const allAssets = assetsData.result || [];
-    const totalPages = Math.ceil((assetsData.totalCount || 0) / itemsPerPage);
+  const handleRequestAction = async (e) => {
+    e.preventDefault();
+    const note = e.target.note.value;
+    const isOtherCompany = userData?.hrEmail !== selectedAsset.hrEmail;
 
-    // fetching all companies for join tab
-    const { data: companies = [], isLoading: companiesLoading } = useQuery({
-        queryKey: ['all-hr-companies'],
-        queryFn: async () => {
-            const res = await axiosSecure.get("/hr-companies");
-            return res.data;
-        }
-    });
-
-    // function to handle both asset request and join request based on context
-    const handleRequestAction = async (e) => {
-        e.preventDefault();
-        const note = e.target.note.value;
-        const isOtherCompany = userData?.hrEmail !== selectedAsset.hrEmail;
-
-        const requestData = {
-            assetId: selectedAsset._id,
-            assetName: selectedAsset.productName,
-            assetType: selectedAsset.productType,
-            assetImage: selectedAsset.productImage,
-            requesterEmail: user?.email.toLowerCase(),
-            requesterName: user?.displayName,
-            hrEmail: selectedAsset.hrEmail,
-            hrName: selectedAsset.hrName || selectedAsset.companyName,
-            requestDate: new Date(), 
-            requestStatus: "pending", 
-            note: note,
-            type: isOtherCompany ? "JoinRequest" : "AssetRequest"
-        };
-
-        try {
-            const res = await axiosSecure.post("/requests", requestData);
-            if (res.data.insertedId) {
-                Swal.fire({ 
-                    title: isOtherCompany ? "Join Request Sent!" : "Asset Requested!", 
-                    text: "Waiting for HR approval.",
-                    icon: "success", 
-                    background: isDark ? '#0f172a' : '#fff',
-                    color: isDark ? '#fff' : '#000',
-                    confirmButtonColor: '#2563eb'
-                });
-                document.getElementById('request_modal').close();
-                e.target.reset();
-                refetch(); 
-            }
-        } catch (error) {
-            Swal.fire({ title: "Error", text: "Process failed. Try again.", icon: "error" });
-        }
+    const requestData = {
+      assetId: selectedAsset._id,
+      assetName: selectedAsset.productName,
+      assetType: selectedAsset.productType,
+      assetImage: selectedAsset.productImage,
+      requesterEmail: user?.email.toLowerCase(),
+      requesterName: user?.displayName,
+      hrEmail: selectedAsset.hrEmail,
+      hrName: selectedAsset.hrName || selectedAsset.companyName,
+      requestDate: new Date(),
+      requestStatus: "pending",
+      note: note,
+      type: isOtherCompany ? "JoinRequest" : "AssetRequest",
     };
 
-    const handleDirectJoin = async (hr) => {
-        const joinData = {
-            hrEmail: hr.email,
-            userEmail: user?.email.toLowerCase(),
-            userName: user?.displayName,
-            status: "Pending",
-            requestDate: new Date().toISOString().split('T')[0]
-        };
+    try {
+      const res = await axiosSecure.post("/requests", requestData);
+      if (res.data.insertedId) {
+        Swal.fire({
+          title: "Success",
+          text: "Request submitted.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+          background: isDark ? "#070F2B" : "#fff",
+          color: isDark ? "#9290C3" : "#000",
+        });
+        document.getElementById("request_modal").close();
+        refetch();
+      }
+    } catch (error) {
+      Swal.fire("Error", "Process failed.", "error");
+    }
+  };
 
-        try {
-            const res = await axiosSecure.post("/join-requests", joinData);
-            if (res.data.insertedId) {
-                Swal.fire({ title: "Request Sent!", icon: "success", background: isDark ? '#0f172a' : '#fff' });
-            }
-        } catch (error) {
-             Swal.fire({ title: "Note", text: "Request already pending.", icon: "info" });
-        }
-    };
+  const handleDirectJoin = async (hr) => {
+    try {
+      const res = await axiosSecure.post("/join-requests", {
+        hrEmail: hr.email,
+        userEmail: user?.email.toLowerCase(),
+        userName: user?.displayName,
+        status: "Pending",
+        requestDate: new Date().toISOString().split("T")[0],
+      });
+      if (res.data.insertedId) {
+        Swal.fire({
+          title: "Sent!",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      Swal.fire("Note", "Already pending.", "info");
+    }
+  };
 
-    if (userLoading) return (
-        <div className="flex flex-col justify-center items-center min-h-screen bg-slate-50 dark:bg-slate-950">
-            <Loader2 className="animate-spin text-blue-600 w-16 h-16 mb-4" />
-            <p className="text-slate-400 font-bold uppercase tracking-widest text-xs">Syncing Core Data...</p>
-        </div>
+  if (userLoading)
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-white dark:bg-[#070F2B]">
+        <Loader2 className="animate-spin text-[#535C91] w-10 h-10" />
+      </div>
     );
 
-    return (
-        <div className="p-4 md:p-10 pt-28 min-h-screen bg-[#f8fafc] dark:bg-slate-950 transition-all duration-500">
-            <div className="max-w-7xl mx-auto">
-                
-                {/* Header */}
-                <div className="mb-12 text-center">
-                    <h2 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-4">
-                        Market<span className="text-blue-600 italic">Place</span>
-                    </h2>
-                    <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto font-medium">
-                        Request assets from your company or explore and join new corporate teams.
-                    </p>
-                </div>
+  return (
+    <div className="p-4 md:p-8 pt-24 min-h-screen bg-white dark:bg-[#070F2B] transition-colors duration-300">
+      <div className="max-w-6xl mx-auto">
+        {/* Header - Balanced Scale */}
+        <div className="mb-10 text-center">
+          <h2 className="text-4xl md:text-5xl font-black text-[#070F2B] dark:text-white tracking-tighter italic leading-none">
+            Market<span className="text-[#535C91]">Place</span>
+          </h2>
+          <p className="text-[#535C91] dark:text-[#9290C3]/60 text-[10px] font-black tracking-[0.3em] mt-3 italic uppercase">
+            Asset Inventory & Corporate Discovery
+          </p>
+        </div>
 
-                {/* Tab Navigation */}
-                <div className="flex justify-center mb-16">
-                    <div className="inline-flex bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl p-1.5 rounded-4xl border border-white dark:border-slate-800 shadow-2xl">
-                        <button 
-                            onClick={() => setActiveTab('inventory')}
-                            className={`px-10 py-4 rounded-[1.7rem] text-xs font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeTab === 'inventory' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
-                        >
-                            <LayoutGrid size={18} /> Inventory
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('join')}
-                            className={`px-10 py-4 rounded-[1.7rem] text-xs font-black uppercase tracking-widest transition-all flex items-center gap-3 ${activeTab === 'join' ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200'}`}
-                        >
-                            <Building2 size={18} /> Companies
-                        </button>
-                    </div>
-                </div>
+        {/* Tab Navigation - Compact Padding */}
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex bg-gray-50 dark:bg-[#1B1A55]/20 p-1.5 rounded-2xl border border-gray-100 dark:border-[#535C91]/20 shadow-sm">
+            {[
+              { id: "inventory", label: "Inventory", icon: LayoutGrid },
+              { id: "join", label: "Companies", icon: Building2 },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-8 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-2 uppercase ${
+                  activeTab === tab.id
+                    ? "bg-[#1B1A55] text-white shadow-md"
+                    : "text-[#535C91] hover:bg-gray-100 dark:hover:bg-white/5"
+                }`}
+              >
+                <tab.icon size={14} /> {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
 
-                {/* Inventory Tab */}
-                {activeTab === 'inventory' && (
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="flex flex-col lg:flex-row gap-4 mb-10">
-                            <div className="relative flex-grow group">
-                                <Search className="absolute top-1/2 -translate-y-1/2 left-6 text-slate-300 group-focus-within:text-blue-500 transition-colors" size={20} />
-                                <input 
-                                    type="text" 
-                                    placeholder="Search by asset name..." 
-                                    className="w-full pl-16 pr-6 h-16 bg-white dark:bg-slate-900 border-none rounded-3xl shadow-sm focus:ring-2 focus:ring-blue-500 outline-none font-bold text-slate-700 dark:text-slate-200" 
-                                    value={searchTerm} 
-                                    onChange={(e) => setSearchTerm(e.target.value)} 
-                                />
-                            </div>
-                            <div className="relative">
-                                <Filter className="absolute top-1/2 -translate-y-1/2 left-6 text-slate-400" size={18} />
-                                <select 
-                                    className="h-16 pl-14 pr-10 bg-white dark:bg-slate-900 border-none rounded-3xl font-black uppercase text-[10px] tracking-widest text-slate-500 outline-none appearance-none cursor-pointer shadow-sm focus:ring-2 focus:ring-blue-500" 
-                                    value={filterType} 
-                                    onChange={(e) => setFilterType(e.target.value)}
-                                >
-                                    <option value="">All Categories</option>
-                                    <option value="Returnable">Returnable</option>
-                                    <option value="Non-returnable">Non-returnable</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        {assetsLoading ? (
-                             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={48} /></div>
-                        ) : (
-                            <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                                {allAssets.map(asset => {
-                                    const isMyCompany = userData?.hrEmail === asset.hrEmail;
-                                    return (
-                                        <div key={asset._id} className="group bg-white dark:bg-slate-900 rounded-[2.5rem] p-3 border border-slate-100 dark:border-slate-800 hover:border-blue-500/50 transition-all duration-500 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] dark:hover:shadow-none relative overflow-hidden h-full flex flex-col">
-                                            <div className="relative h-56 rounded-[2.2rem] overflow-hidden mb-6">
-                                                <img src={asset.productImage} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt={asset.productName} />
-                                                <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
-                                                    <span className="text-white text-[10px] font-black uppercase tracking-[0.2em]">Available: {asset.availableQuantity || asset.productQuantity}</span>
-                                                </div>
-                                                <div className="absolute top-4 left-4 flex gap-2">
-                                                    <span className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest">
-                                                        {asset.productType}
-                                                    </span>
-                                                    {isMyCompany && (
-                                                        <span className="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/40">
-                                                            My Team
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </div>
-
-                                            <div className="px-4 pb-4 flex flex-col flex-grow">
-                                                <h4 className="font-black text-slate-900 dark:text-white uppercase truncate text-lg italic tracking-tighter mb-1">{asset.productName}</h4>
-                                                <div className="flex items-center gap-2 mb-6 text-slate-400 dark:text-slate-500">
-                                                    <Building2 size={12} />
-                                                    <p className="text-[9px] font-bold uppercase tracking-widest">{asset.companyName || 'Corporate Entity'}</p>
-                                                </div>
-                                                
-                                                <button 
-                                                    disabled={asset.availableQuantity === 0}
-                                                    onClick={() => { setSelectedAsset(asset); document.getElementById('request_modal').showModal(); }}
-                                                    className={`w-full py-4 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] transition-all flex items-center justify-center gap-2 ${isMyCompany ? 'bg-slate-900 dark:bg-blue-600 text-white hover:bg-blue-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-blue-600 hover:text-white'} disabled:opacity-50 disabled:cursor-not-allowed`}
-                                                >
-                                                    {asset.availableQuantity === 0 ? 'Out of Stock' : (isMyCompany ? <PackagePlus size={16}/> : <ArrowUpRight size={16}/>)}
-                                                    {asset.availableQuantity > 0 && (isMyCompany ? 'Request Now' : 'Join to Claim')}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Pagination */}
-                            {totalPages > 1 && (
-                                <div className="flex justify-center items-center gap-3 mt-16 pb-10">
-                                    <button 
-                                        disabled={currentPage === 1}
-                                        onClick={() => setCurrentPage(p => p - 1)}
-                                        className="p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:bg-blue-600 hover:text-white transition-all disabled:opacity-20"
-                                    >
-                                        <ChevronLeft size={18} />
-                                    </button>
-                                    <button 
-                                        disabled={currentPage === totalPages}
-                                        onClick={() => setCurrentPage(p => p + 1)}
-                                        className="p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm hover:bg-blue-600 hover:text-white transition-all disabled:opacity-20"
-                                    >
-                                        <ChevronRight size={18} />
-                                    </button>
-                                </div>
-                            )}
-                            </>
-                        )}
-                    </div>
-                )}
-
-                {activeTab === 'join' && (
-                    <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="grid gap-6">
-                            {companiesLoading ? (
-                                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={48} /></div>
-                            ) : (
-                                companies.map(hr => (
-                                    <div key={hr._id} className="bg-white dark:bg-slate-900 p-6 md:p-10 rounded-[3rem] border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 hover:shadow-2xl transition-all group">
-                                        <div className="flex items-center gap-8">
-                                            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-3xl flex items-center justify-center overflow-hidden">
-                                                {hr.companyLogo ? <img src={hr.companyLogo} className="w-full h-full object-cover" /> : <Building2 size={32} />}
-                                            </div>
-                                            <div>
-                                                <h4 className="text-2xl font-black uppercase italic text-slate-800 dark:text-white">{hr.companyName}</h4>
-                                                <p className="text-[10px] font-bold uppercase text-slate-400">HR: {hr.name}</p>
-                                            </div>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleDirectJoin(hr)}
-                                            disabled={userData?.hrEmail === hr.email}
-                                            className="px-10 py-5 bg-slate-900 dark:bg-blue-600 text-white rounded-[1.8rem] font-black text-[11px] uppercase transition-all disabled:opacity-20"
-                                        >
-                                            <UserPlus size={18} /> Join Team
-                                        </button>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                )}
+        {activeTab === "inventory" && (
+          <div className="space-y-8">
+            {/* Search & Filter - Balanced Height */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-3 bg-gray-50/50 dark:bg-[#1B1A55]/10 p-2 rounded-2xl border border-gray-100 dark:border-[#535C91]/20">
+              <div className="md:col-span-8 relative">
+                <Search
+                  className="absolute left-5 top-1/2 -translate-y-1/2 text-[#535C91]"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Search assets..."
+                  className="w-full pl-12 pr-6 py-3 bg-gray-200/50 dark:bg-[#070F2B] border-none rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[13px] font-semibold dark:text-white transition-all shadow-inner"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+              <div className="md:col-span-4 relative">
+                <Filter
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#535C91]"
+                  size={16}
+                />
+                <select
+                  className="w-full pl-10 pr-4 py-3 bg-gray-200/50 dark:bg-[#070F2B] border-none rounded-xl text-[10px] font-black tracking-widest text-[#535C91] appearance-none cursor-pointer uppercase outline-none"
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                >
+                  <option value="">All Categories</option>
+                  <option value="Returnable">Returnable</option>
+                  <option value="Non-returnable">Non-returnable</option>
+                </select>
+              </div>
             </div>
 
-            {/* Modal */}
-            <dialog id="request_modal" className="modal backdrop-blur-md">
-                <div className="modal-box rounded-[3rem] p-0 bg-white dark:bg-slate-900 max-w-lg overflow-hidden border-none shadow-2xl">
-                    <div className="bg-slate-900 dark:bg-blue-700 p-12 text-white relative">
-                        <h3 className="text-4xl font-black uppercase italic tracking-tighter relative z-10">
-                            {userData?.hrEmail === selectedAsset?.hrEmail ? 'Confirm Request' : 'Join Team First'}
-                        </h3>
-                        <p className="text-[10px] font-black uppercase text-blue-300 mt-3 tracking-widest relative z-10">
-                            Item: {selectedAsset?.productName}
+            {assetsLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="animate-spin text-[#535C91]" size={40} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
+                {allAssets.map((asset) => {
+                  const isMyCompany = userData?.hrEmail === asset.hrEmail;
+                  return (
+                    <div
+                      key={asset._id}
+                      className="bg-white dark:bg-[#1B1A55]/10 rounded-[2rem] p-3.5 border border-gray-100 dark:border-[#535C91]/20 hover:border-[#9290C3]/40 transition-all group flex flex-col h-full shadow-sm hover:shadow-xl"
+                    >
+                      <div className="relative h-44 rounded-2xl overflow-hidden mb-4 shadow-sm">
+                        <img
+                          src={asset.productImage}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          alt=""
+                        />
+                        <div className="absolute top-2 left-2 flex flex-col gap-1.5">
+                          <span className="bg-[#1B1A55]/80 backdrop-blur-md text-white text-[8px] font-black px-2.5 py-1 rounded-lg uppercase">
+                            Qty: {asset.availableQuantity}
+                          </span>
+                        </div>
+                        {isMyCompany && (
+                          <div className="absolute top-2 right-2 bg-emerald-500 text-white p-1.5 rounded-lg shadow-lg border border-white/10">
+                            <Users size={12} />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="px-1 flex flex-col flex-grow">
+                        <h4 className="font-black text-[#070F2B] dark:text-white text-[13px] italic tracking-tight truncate uppercase mb-1">
+                          {asset.productName}
+                        </h4>
+                        <p className="text-[9px] font-bold text-[#535C91] mb-4 flex items-center gap-1.5 italic truncate opacity-70 uppercase">
+                          <Building2 size={11} /> {asset.companyName}
                         </p>
+
+                        <button
+                          disabled={asset.availableQuantity === 0}
+                          onClick={() => {
+                            setSelectedAsset(asset);
+                            document
+                              .getElementById("request_modal")
+                              .showModal();
+                          }}
+                          className={`mt-auto w-full py-2.5 rounded-xl font-black text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 uppercase shadow-sm active:scale-95 ${
+                            isMyCompany
+                              ? "bg-[#1B1A55] text-white hover:bg-[#535C91]"
+                              : "bg-gray-100 dark:bg-[#070F2B] text-[#535C91] hover:bg-gray-200"
+                          } disabled:opacity-30`}
+                        >
+                          {asset.availableQuantity === 0 ? (
+                            "Empty"
+                          ) : isMyCompany ? (
+                            <PackagePlus size={14} />
+                          ) : (
+                            <ArrowUpRight size={14} />
+                          )}
+                          {asset.availableQuantity > 0 &&
+                            (isMyCompany ? "Request" : "Join First")}
+                        </button>
+                      </div>
                     </div>
-                    
-                    <form onSubmit={handleRequestAction} className="p-10 space-y-8 bg-white dark:bg-slate-900">
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-2">Note / Purpose</label>
-                            <textarea 
-                                name="note" 
-                                className="w-full h-40 bg-slate-50 dark:bg-slate-800 rounded-4xl p-8 outline-none font-bold text-slate-700 dark:text-white border-2 border-transparent focus:border-blue-500 transition-all resize-none" 
-                                required 
-                                placeholder="Why do you need this?"
-                            ></textarea>
-                        </div>
-                        
-                        <div className="flex flex-col sm:flex-row gap-4">
-                            <button type="submit" className="flex-grow py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs tracking-[0.2em] shadow-2xl shadow-blue-500/40 hover:scale-105 active:scale-95 transition-all">Submit Request</button>
-                            <button 
-                                type="button" 
-                                onClick={() => document.getElementById('request_modal').close()} 
-                                className="px-8 py-5 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-3xl font-black uppercase text-xs transition-all"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </form>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Pagination - Standard */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-10 pb-6">
+                <button
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => p - 1)}
+                  className="p-2.5 bg-gray-100 dark:bg-[#1B1A55] rounded-lg text-[#535C91] disabled:opacity-20 hover:bg-[#535C91] hover:text-white transition-colors"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                <span className="text-[10px] font-black text-[#535C91] mx-4 uppercase tracking-[0.2em]">
+                  Page {currentPage} / {totalPages}
+                </span>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => p + 1)}
+                  className="p-2.5 bg-gray-100 dark:bg-[#1B1A55] rounded-lg text-[#535C91] disabled:opacity-20 hover:bg-[#535C91] hover:text-white transition-colors"
+                >
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "join" && (
+          <div className="max-w-3xl mx-auto space-y-3">
+            {companiesLoading ? (
+              <div className="flex justify-center py-20">
+                <Loader2 className="animate-spin text-[#535C91]" size={40} />
+              </div>
+            ) : (
+              companies.map((hr) => (
+                <div
+                  key={hr._id}
+                  className="bg-white dark:bg-[#1B1A55]/10 p-4 rounded-2xl border border-gray-100 dark:border-[#535C91]/20 flex items-center justify-between gap-4 hover:shadow-md transition-all group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gray-50 dark:bg-[#070F2B] rounded-xl flex items-center justify-center overflow-hidden border border-[#535C91]/10 shrink-0">
+                      {hr.companyLogo ? (
+                        <img
+                          src={hr.companyLogo}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Building2 size={20} className="text-[#535C91]" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-[14px] font-black italic text-[#070F2B] dark:text-white tracking-tight uppercase leading-none mb-1">
+                        {hr.companyName}
+                      </h4>
+                      <p className="text-[9px] font-bold text-[#535C91] dark:text-[#9290C3]/60 tracking-widest uppercase italic opacity-70">
+                        Manager: {hr.name}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => handleDirectJoin(hr)}
+                    disabled={userData?.hrEmail === hr.email}
+                    className="px-6 py-2 bg-[#1B1A55] text-white rounded-xl font-black text-[9px] tracking-widest uppercase hover:bg-[#535C91] disabled:opacity-20 shadow-sm transition-all active:scale-95"
+                  >
+                    <UserPlus size={14} className="inline mr-1" /> Join Team
+                  </button>
                 </div>
-            </dialog>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Modal - Standard Enterprise Look */}
+      <dialog id="request_modal" className="modal backdrop-blur-sm">
+        <div className="modal-box rounded-[2.5rem] p-0 bg-white dark:bg-[#070F2B] max-w-md border border-gray-100 dark:border-[#535C91]/30 shadow-2xl">
+          <div className="bg-[#1B1A55] p-8 text-white">
+            <h3 className="text-2xl font-black italic tracking-tighter uppercase leading-none">
+              {userData?.hrEmail === selectedAsset?.hrEmail
+                ? "Confirm Request"
+                : "Join Request"}
+            </h3>
+            <p className="text-[9px] font-black text-[#9290C3] mt-2 tracking-widest uppercase italic">
+              Item: {selectedAsset?.productName}
+            </p>
+          </div>
+          <form onSubmit={handleRequestAction} className="p-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-[#535C91] uppercase tracking-widest ml-1">
+                Reason / Note
+              </label>
+              <textarea
+                name="note"
+                className="w-full h-32 bg-gray-100 dark:bg-[#1B1A55]/20 rounded-xl p-4 outline-none font-semibold text-[12px] text-[#070F2B] dark:text-white border-none focus:ring-1 focus:ring-[#9290C3] transition-all resize-none shadow-inner"
+                placeholder="Briefly explain your requirement..."
+                required
+              ></textarea>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="flex-grow py-3 bg-[#1B1A55] text-white rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg hover:bg-[#535C91] active:scale-95 transition-all"
+              >
+                Submit
+              </button>
+              <button
+                type="button"
+                onClick={() => document.getElementById("request_modal").close()}
+                className="px-6 py-3 bg-gray-100 dark:bg-[#1B1A55] text-[#535C91] rounded-xl font-black text-[10px] tracking-widest uppercase active:scale-95 transition-all"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
-    );
+      </dialog>
+    </div>
+  );
 };
 
 export default RequestAsset;
