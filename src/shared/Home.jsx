@@ -344,7 +344,7 @@ const Home = () => {
           initial="initial"
           whileInView="whileInView"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 "
         >
           {[
             {
@@ -382,9 +382,9 @@ const Home = () => {
               key={i}
               variants={fadeInUp}
               whileHover={{ y: -5 }}
-              className="p-8 bg-white dark:bg-[#1B1A55]/10 border border-gray-100 dark:border-[#535C91]/20 rounded-[2.5rem] hover:border-[#9290C3] transition-all group"
+              className="p-8 bg-white dark:bg-[#1B1A55]/10 border border-gray-100 dark:border-[#535C91]/20 rounded-[2.5rem] hover:border-[#9290C3] transition-all group shadow-2xl "
             >
-              <div className="w-12 h-12 bg-gray-50 dark:bg-[#070F2B] rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-gray-50 dark:bg-[#070F2B] rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform  ">
                 <div className="text-[#1B1A55] dark:text-[#9290C3]">
                   {feature.icon}
                 </div>

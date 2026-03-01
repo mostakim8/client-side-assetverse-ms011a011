@@ -141,7 +141,6 @@ const MyAssets = () => {
             />
             <input
               type="text"
-              placeholder="Search by name..."
               className="w-full pl-12 pr-6 py-3 bg-gray-200/50 dark:bg-[#070F2B] border-none rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[13px] font-semibold dark:text-white transition-all shadow-inner"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -282,7 +281,7 @@ const MyAssets = () => {
                             onClick={() =>
                               handleReturn(asset._id, asset.assetId)
                             }
-                            className="inline-flex items-center gap-2 bg-[#1B1A55] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#535C91] active:scale-95 transition-all shadow-md"
+                            className="inline-flex items-center gap-2 bg-[#1B1A55] text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-[#535C91] active:scale-95 transition-all shadow-md cursor-pointer"
                           >
                             <Undo2 size={12} /> Return
                           </button>

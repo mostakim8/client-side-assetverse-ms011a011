@@ -2,7 +2,7 @@
 
 @variant dark (&:where(.dark, .dark *));
 
-/* Tailwind v4 এ কাস্টম ফন্ট ডিফাইন করার নিয়ম */
+
 @theme {
   --font-inter: "Inter", sans-serif;
 }
@@ -24,7 +24,6 @@
   }
 
   body {
-    /* এখানে সরাসরি var ব্যবহার করা নিরাপদ */
     font-family: var(--font-inter);
     @apply transition-colors duration-300 min-h-screen;
   }

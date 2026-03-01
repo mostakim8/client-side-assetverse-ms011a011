@@ -169,7 +169,7 @@ const RequestAsset = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-8 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-2 uppercase ${
+                className={`px-8 py-2.5 rounded-xl text-[10px] font-black tracking-widest transition-all flex items-center gap-2 uppercase cursor-pointer ${
                   activeTab === tab.id
                     ? "bg-[#1B1A55] text-white shadow-md"
                     : "text-[#535C91] hover:bg-gray-100 dark:hover:bg-white/5"
@@ -192,7 +192,6 @@ const RequestAsset = () => {
                 />
                 <input
                   type="text"
-                  placeholder="Search assets..."
                   className="w-full pl-12 pr-6 py-3 bg-gray-200/50 dark:bg-[#070F2B] border-none rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[13px] font-semibold dark:text-white transition-all shadow-inner"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -262,7 +261,7 @@ const RequestAsset = () => {
                               .getElementById("request_modal")
                               .showModal();
                           }}
-                          className={`mt-auto w-full py-2.5 rounded-xl font-black text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 uppercase shadow-sm active:scale-95 ${
+                          className={`mt-auto w-full py-2.5 rounded-xl font-black text-[9px] tracking-widest transition-all flex items-center justify-center gap-2 uppercase shadow-sm active:scale-95 cursor-pointer ${
                             isMyCompany
                               ? "bg-[#1B1A55] text-white hover:bg-[#535C91]"
                               : "bg-gray-100 dark:bg-[#070F2B] text-[#535C91] hover:bg-gray-200"
@@ -357,7 +356,10 @@ const RequestAsset = () => {
       </div>
 
       {/* Modal - Standard Enterprise Look */}
-      <dialog id="request_modal" className="modal backdrop-blur-sm">
+      <dialog
+        id="request_modal"
+        className="modal backdrop-blur-sm bg-white dark:bg-[#070F2B] "
+      >
         <div className="modal-box rounded-[2.5rem] p-0 bg-white dark:bg-[#070F2B] max-w-md border border-gray-100 dark:border-[#535C91]/30 shadow-2xl">
           <div className="bg-[#1B1A55] p-8 text-white">
             <h3 className="text-2xl font-black italic tracking-tighter uppercase leading-none">
@@ -377,21 +379,20 @@ const RequestAsset = () => {
               <textarea
                 name="note"
                 className="w-full h-32 bg-gray-100 dark:bg-[#1B1A55]/20 rounded-xl p-4 outline-none font-semibold text-[12px] text-[#070F2B] dark:text-white border-none focus:ring-1 focus:ring-[#9290C3] transition-all resize-none shadow-inner"
-                placeholder="Briefly explain your requirement..."
                 required
               ></textarea>
             </div>
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="flex-grow py-3 bg-[#1B1A55] text-white rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg hover:bg-[#535C91] active:scale-95 transition-all"
+                className="flex-grow py-3 bg-[#1B1A55] text-white rounded-xl font-black text-[10px] tracking-widest uppercase shadow-lg hover:bg-[#535C91] active:scale-95 transition-all cursor-pointer"
               >
                 Submit
               </button>
               <button
                 type="button"
                 onClick={() => document.getElementById("request_modal").close()}
-                className="px-6 py-3 bg-gray-100 dark:bg-[#1B1A55] text-[#535C91] rounded-xl font-black text-[10px] tracking-widest uppercase active:scale-95 transition-all"
+                className="px-6 py-3 bg-gray-100 dark:bg-[#1B1A55] text-[#535C91] rounded-xl font-black text-[10px] tracking-widest uppercase active:scale-95 transition-all cursor-pointer"
               >
                 Cancel
               </button>

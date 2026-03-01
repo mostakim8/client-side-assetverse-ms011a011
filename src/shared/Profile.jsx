@@ -5,6 +5,7 @@ import useAxiosSecure from "../hooks/useAxiosSecure";
 import { ThemeContext } from "../hooks/ThemeContext";
 import Swal from "sweetalert2";
 import { motion } from "framer-motion";
+import { updatePassword } from "firebase/auth"; 
 import {
   User,
   Mail,
@@ -14,6 +15,10 @@ import {
   Loader2,
   Building2,
   Fingerprint,
+  Lock,
+  Eye,
+  EyeOff,
+  KeyRound,
 } from "lucide-react";
 
 const Profile = () => {
@@ -37,6 +42,8 @@ const Profile = () => {
 
   const [name, setName] = useState(user?.displayName);
   const [image, setImage] = useState(user?.photoURL);
+  const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleCameraClick = () => {
@@ -54,28 +61,41 @@ const Profile = () => {
     setIsUpdating(true);
     try {
       await updateUserProfile(name, image);
+
+      if (newPassword) {
+        if (newPassword.length < 6) {
+          throw new Error("Password must be at least 6 characters.");
+        }
+        await updatePassword(user, newPassword);
+      }
+
       const res = await axiosSecure.patch(`/users/update/${user?.email}`, {
         name: name,
         image: image,
       });
 
-      if (res.data.modifiedCount > 0 || res.data.matchedCount > 0) {
+      if (
+        res.data.modifiedCount > 0 ||
+        res.data.matchedCount > 0 ||
+        newPassword
+      ) {
         Swal.fire({
           icon: "success",
           title: "SUCCESS!",
-          text: "Profile Identity Updated",
+          text: "Profile Identity & Password Updated",
           showConfirmButton: false,
           timer: 1500,
           background: isDark ? "#070F2B" : "#fff",
           color: isDark ? "#9290C3" : "#070F2B",
         });
+        setNewPassword(""); 
         refetch();
       }
     } catch (error) {
       Swal.fire({
         icon: "error",
         title: "ERROR",
-        text: "Update failed.",
+        text: error.message || "Update failed.",
         background: isDark ? "#070F2B" : "#fff",
         color: isDark ? "#9290C3" : "#070F2B",
       });
@@ -98,7 +118,6 @@ const Profile = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-6xl mx-auto"
       >
-        {/* Header - Matches Marketplace Style */}
         <div className="mb-10 flex flex-col items-center text-center md:items-start md:text-left">
           <h2 className="text-4xl md:text-5xl font-black text-[#070F2B] dark:text-white tracking-tighter italic leading-none uppercase">
             Account <span className="text-[#535C91]">Profile</span>
@@ -109,13 +128,10 @@ const Profile = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-          {/* Left: Info Card - Balanced with Team Cards */}
           <div className="lg:col-span-4">
             <div className="bg-white dark:bg-[#1B1A55]/10 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-[#535C91]/20 overflow-hidden sticky top-28 transition-all hover:shadow-xl group">
-              {/* Profile Background Banner */}
               <div className="h-28 bg-[#1B1A55] relative overflow-hidden">
                 <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#535C91] to-transparent"></div>
-                <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/5 rounded-full blur-2xl"></div>
               </div>
 
               <div className="px-6 pb-10 text-center">
@@ -144,11 +160,7 @@ const Profile = () => {
 
                 <div className="flex justify-center mb-8">
                   <span
-                    className={`px-4 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase flex items-center gap-2 shadow-sm ${
-                      dbUser?.role === "hr"
-                        ? "bg-[#1B1A55] text-white"
-                        : "bg-[#535C91]/10 text-[#535C91] dark:text-[#9290C3]"
-                    }`}
+                    className={`px-4 py-1 rounded-lg text-[9px] font-black tracking-widest uppercase flex items-center gap-2 shadow-sm ${dbUser?.role === "hr" ? "bg-[#1B1A55] text-white" : "bg-[#535C91]/10 text-[#535C91] dark:text-[#9290C3]"}`}
                   >
                     <ShieldCheck size={10} />{" "}
                     {dbUser?.role === "hr" ? "HR Manager" : "Employee"}
@@ -186,7 +198,6 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Right: Update Form - Matches Marketplace Table Container */}
           <div className="lg:col-span-8">
             <div className="bg-white dark:bg-[#1B1A55]/10 rounded-[2.5rem] border border-gray-100 dark:border-[#535C91]/20 p-6 md:p-10 shadow-sm">
               <div className="flex items-center gap-3 mb-8 border-b border-gray-50 dark:border-[#535C91]/10 pb-6">
@@ -194,7 +205,7 @@ const Profile = () => {
                   <User size={18} />
                 </div>
                 <h4 className="text-[14px] font-black text-[#070F2B] dark:text-white uppercase italic tracking-tighter">
-                  Profile Credentials
+                  Profile Setting
                 </h4>
               </div>
 
@@ -227,7 +238,7 @@ const Profile = () => {
 
                 <div className="space-y-2">
                   <label className="text-[9px] font-black text-[#535C91] dark:text-[#9290C3]/60 tracking-widest uppercase ml-1">
-                    Identity Image Resource (URL)
+                    Image URL
                   </label>
                   <input
                     ref={imageInputRef}
@@ -238,11 +249,40 @@ const Profile = () => {
                   />
                 </div>
 
-                <div className="pt-8">
+                {/* --- Password Update Section --- */}
+                <div className="pt-6 border-t border-gray-50 dark:border-[#535C91]/10">
+                  <div className="flex items-center gap-2 mb-4">
+                    <KeyRound size={14} className="text-[#535C91]" />
+                    <h5 className="text-[10px] font-black text-[#070F2B] dark:text-white uppercase tracking-widest">
+                      Update Password
+                    </h5>
+                  </div>
+                  <div className="relative group">
+                    <Lock
+                      className="absolute left-5 top-1/2 -translate-y-1/2 text-[#535C91]/40"
+                      size={16}
+                    />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full pl-12 pr-12 py-3.5 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/30 rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[13px] font-semibold dark:text-white transition-all shadow-inner"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-5 top-1/2 -translate-y-1/2 text-[#535C91]/40 hover:text-[#9290C3] transition-colors"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="pt-4">
                   <button
                     disabled={isUpdating}
                     type="submit"
-                    className="w-full md:w-auto flex items-center justify-center gap-3 bg-[#1B1A55] text-white px-10 py-3.5 rounded-xl font-black text-[10px] tracking-[0.2em] transition-all shadow-lg hover:bg-[#535C91] active:scale-95 disabled:opacity-50 uppercase"
+                    className="w-full md:w-auto flex items-center justify-center gap-3 bg-[#1B1A55] text-white px-10 py-3.5 rounded-xl font-black text-[10px] tracking-[0.2em] transition-all shadow-lg hover:bg-[#535C91] active:scale-95 disabled:opacity-50 uppercase cursor-pointer"
                   >
                     {isUpdating ? (
                       <>

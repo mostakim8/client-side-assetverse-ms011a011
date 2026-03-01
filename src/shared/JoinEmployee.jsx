@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useContext, useState } from "react";
 import { AuthContext } from "../providers/AuthProvider";
 import { ThemeContext } from "../hooks/ThemeContext";
 import { useNavigate, Link } from "react-router-dom";
@@ -13,7 +13,9 @@ import {
   ImageIcon,
   ArrowRight,
   UserPlus,
-  Fingerprint,
+  Eye,
+  EyeOff,
+  Loader2, 
 } from "lucide-react";
 
 const JoinEmployee = () => {
@@ -21,8 +23,12 @@ const JoinEmployee = () => {
   const { isDark } = useContext(ThemeContext);
   const navigate = useNavigate();
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false); 
+
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true); // রেজিস্ট্রেশন শুরু হলে লোডিং ট্রু
     const form = e.target;
     const name = form.name.value;
     const email = form.email.value;
@@ -78,6 +84,7 @@ const JoinEmployee = () => {
         setTimeout(() => navigate("/"), 500);
       }
     } catch (error) {
+      setLoading(false); // এরর হলে লোডিং বন্ধ
       Swal.fire({
         title: "ERROR!",
         text: error.message,
@@ -95,7 +102,6 @@ const JoinEmployee = () => {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-xl w-full bg-white dark:bg-[#1B1A55]/10 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-[#535C91]/20 overflow-hidden"
       >
-        {/* Header Section - Sharp & Professional */}
         <div className="bg-[#1B1A55] p-10 text-center text-white relative overflow-hidden">
           <div className="absolute top-0 right-0 opacity-10 rotate-12 -mr-6 -mt-6">
             <UserPlus size={140} />
@@ -112,7 +118,7 @@ const JoinEmployee = () => {
 
         <div className="p-8 md:p-10">
           <form onSubmit={handleRegister} className="space-y-5">
-            {/* Full Name */}
+           
             <div className="space-y-2">
               <label className="text-[9px] font-black text-[#535C91] dark:text-[#9290C3]/60 tracking-[0.2em] uppercase ml-1">
                 Full Name
@@ -125,17 +131,15 @@ const JoinEmployee = () => {
                 <input
                   type="text"
                   name="name"
-                  placeholder="Enter your name"
                   className="w-full pl-12 pr-6 py-3.5 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/30 rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[13px] font-semibold dark:text-white transition-all shadow-inner"
                   required
                 />
               </div>
             </div>
 
-            {/* Email */}
             <div className="space-y-2">
               <label className="text-[9px] font-black text-[#535C91] dark:text-[#9290C3]/60 tracking-[0.2em] uppercase ml-1">
-                Email Address
+                Email
               </label>
               <div className="relative group">
                 <Mail
@@ -145,34 +149,37 @@ const JoinEmployee = () => {
                 <input
                   type="email"
                   name="email"
-                  placeholder="name@company.com"
                   className="w-full pl-12 pr-6 py-3.5 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/30 rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[13px] font-semibold dark:text-white transition-all shadow-inner"
                   required
                 />
               </div>
             </div>
 
-            {/* Password */}
             <div className="space-y-2">
               <label className="text-[9px] font-black text-[#535C91] dark:text-[#9290C3]/60 tracking-[0.2em] uppercase ml-1">
-                Secure Password
+                Password
               </label>
               <div className="relative group">
                 <Lock
-                  className="absolute left-5 top-1/2 -translate-y-1/2 text-[#535C91]/50 group-focus-within:text-[#9290C3] transition-colors"
+                  className="absolute left-5 top-1/2 -translate-y-1/2 text-[#535C91]/50"
                   size={18}
                 />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
-                  placeholder="••••••••"
-                  className="w-full pl-12 pr-6 py-3.5 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/30 rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[13px] font-semibold dark:text-white transition-all shadow-inner"
+                  className="w-full pl-12 pr-12 py-3.5 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/30 rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[13px] font-semibold dark:text-white transition-all shadow-inner"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-5 top-1/2 -translate-y-1/2 text-[#535C91]/50 hover:text-[#9290C3] transition-colors cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
               </div>
             </div>
 
-            {/* Date and Photo Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <label className="text-[9px] font-black text-[#535C91] dark:text-[#9290C3]/60 tracking-[0.2em] uppercase ml-1">
@@ -204,25 +211,34 @@ const JoinEmployee = () => {
                   <input
                     type="text"
                     name="photo"
-                    placeholder="https://..."
                     className="w-full pl-12 pr-4 py-3.5 bg-gray-50 dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/30 rounded-xl focus:ring-2 focus:ring-[#9290C3] outline-none text-[12px] font-semibold dark:text-white transition-all"
                     required
                   />
                 </div>
               </div>
             </div>
-
-            {/* Submit Button - Matches Save Identity style */}
-            <button className="w-full mt-4 flex justify-center items-center gap-3 py-4 bg-[#1B1A55] text-white rounded-xl font-black text-[10px] tracking-[0.4em] transition-all shadow-lg hover:bg-[#535C91] active:scale-95 group uppercase italic">
-              Create Account
-              <ArrowRight
-                size={16}
-                className="group-hover:translate-x-1.5 transition-transform"
-              />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-4 flex justify-center items-center gap-3 py-4 bg-[#1B1A55] text-white rounded-xl font-black text-[10px] tracking-[0.4em] transition-all shadow-lg hover:bg-[#535C91] active:scale-95 group uppercase italic cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin" size={16} />
+                  Joining AssetVerse...
+                </>
+              ) : (
+                <>
+                  Create Account
+                  <ArrowRight
+                    size={16}
+                    className="group-hover:translate-x-1.5 transition-transform"
+                  />
+                </>
+              )}
             </button>
           </form>
 
-          {/* Login Link */}
           <div className="mt-8 pt-6 border-t border-gray-50 dark:border-[#535C91]/10 text-center">
             <p className="text-[10px] font-black tracking-widest text-[#535C91] dark:text-[#9290C3]/40 uppercase">
               Already a member?{" "}

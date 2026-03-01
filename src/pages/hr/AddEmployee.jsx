@@ -4,7 +4,7 @@ import useAuth from "../../hooks/UseAuth";
 import useAxiosSecure from "../../hooks/useAxiosSecure";
 import { ThemeContext } from "../../hooks/ThemeContext";
 import Swal from "sweetalert2";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   UserPlus,
   Crown,
@@ -12,24 +12,21 @@ import {
   AlertCircle,
   Search,
   Loader2,
-  CheckCircle2,
   UserCheck,
   CheckCircle,
+  ArrowRight,
 } from "lucide-react";
 
 const AddEmployee = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
   const { isDark } = useContext(ThemeContext);
-  const navigate = useNavigate();
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [displaySearch, setDisplaySearch] = useState("");
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      setSearch(displaySearch);
-    }, 500);
+    const delayDebounceFn = setTimeout(() => setSearch(displaySearch), 500);
     return () => clearTimeout(delayDebounceFn);
   }, [displaySearch]);
 
@@ -81,26 +78,22 @@ const AddEmployee = () => {
   const remainingSlots = employeeLimit - teamCount;
 
   const handleApprove = async (emp) => {
-    if (remainingSlots <= 0) {
+    if (remainingSlots <= 0)
       return Swal.fire({
         icon: "error",
-        title: "Limit Reached!",
-        text: "Please upgrade your package to add more members.",
+        title: "LIMIT REACHED!",
         background: isDark ? "#070F2B" : "#fff",
         color: isDark ? "#9290C3" : "#070F2B",
       });
-    }
     try {
       const res = await axiosSecure.patch(
         `/users/approve-request/${emp.email}`,
-        {
-          hrEmail: user?.email,
-        },
+        { hrEmail: user?.email },
       );
       if (res.data.modifiedCount > 0) {
         Swal.fire({
           icon: "success",
-          title: "Member Added!",
+          title: "ADDED!",
           timer: 1500,
           showConfirmButton: false,
           background: isDark ? "#1B1A55" : "#fff",
@@ -111,13 +104,7 @@ const AddEmployee = () => {
         refetchAvailable();
       }
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.response?.data?.message || "Failed to approve",
-        background: isDark ? "#070F2B" : "#fff",
-        color: isDark ? "#9290C3" : "#070F2B",
-      });
+      Swal.fire({ icon: "error", title: "FAILED" });
     }
   };
 
@@ -125,41 +112,26 @@ const AddEmployee = () => {
     if (selectedEmployees.includes(id)) {
       setSelectedEmployees(selectedEmployees.filter((empId) => empId !== id));
     } else {
-      if (selectedEmployees.length >= remainingSlots) {
-        return Swal.fire({
-          icon: "warning",
-          title: "Limit Reached!",
-          text: "Please upgrade your package.",
-          confirmButtonColor: "#1B1A55",
-          background: isDark ? "#070F2B" : "#fff",
-          color: isDark ? "#9290C3" : "#070F2B",
-        });
-      }
+      if (selectedEmployees.length >= remainingSlots)
+        return Swal.fire({ icon: "warning", title: "LIMIT REACHED!" });
       setSelectedEmployees([...selectedEmployees, id]);
     }
   };
 
   const handleBulkAdd = async () => {
     if (selectedEmployees.length === 0) return;
-
-    const info = {
-      hrEmail: user?.email,
-      companyName: hrData?.companyName,
-      companyLogo: hrData?.companyLogo,
-      employeeIds: selectedEmployees,
-    };
-
     try {
-      const res = await axiosSecure.patch("/add-to-team", info);
+      const res = await axiosSecure.patch("/add-to-team", {
+        hrEmail: user?.email,
+        companyName: hrData?.companyName,
+        companyLogo: hrData?.companyLogo,
+        employeeIds: selectedEmployees,
+      });
       if (res.data.modifiedCount > 0) {
         Swal.fire({
           icon: "success",
-          title: "Team Updated!",
-          text: `${selectedEmployees.length} members added.`,
-          timer: 2000,
-          showConfirmButton: false,
+          title: "TEAM UPDATED!",
           background: isDark ? "#1B1A55" : "#fff",
-          color: isDark ? "#9290C3" : "#1B1A55",
         });
         setSelectedEmployees([]);
         refetchAvailable();
@@ -167,99 +139,84 @@ const AddEmployee = () => {
         refetchPending();
       }
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Error",
-        text: error.response?.data?.message || "Failed to add team members",
-        background: isDark ? "#070F2B" : "#fff",
-        color: isDark ? "#9290C3" : "#070F2B",
-      });
+      Swal.fire({ icon: "error", title: "ERROR" });
     }
   };
 
+  if (isLoading)
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="animate-spin text-[#535C91]" />
+      </div>
+    );
+
   return (
-    <div className="p-4 md:p-10 pt-28 min-h-screen bg-white dark:bg-[#070F2B] transition-colors duration-300">
+    <div className="p-4 md:p-12 pt-28 min-h-screen bg-white dark:bg-[#070F2B] transition-colors duration-300">
       <div className="max-w-6xl mx-auto">
         {/* Stats Card */}
-        <div className="relative overflow-hidden bg-white dark:bg-[#1B1A55]/10 rounded-[2.5rem] p-8 shadow-2xl border border-gray-100 dark:border-[#535C91]/30 mb-10">
-          <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-[#535C91]/10 rounded-full opacity-50 blur-3xl"></div>
-          <div className="relative flex flex-col lg:flex-row justify-between items-center gap-8">
-            <div className="flex items-center gap-6">
-              <div className="w-20 h-20 bg-[#1B1A55] rounded-3xl flex items-center justify-center text-[#9290C3] shadow-xl border border-[#535C91]/30">
-                <Users size={36} />
+        <div className="bg-white dark:bg-[#1B1A55]/10 rounded-[2rem] p-6 border border-gray-100 dark:border-[#535C91]/30 mb-8">
+          <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
+            <div className="flex items-center gap-5">
+              <div className="w-16 h-16 bg-[#1B1A55] rounded-2xl flex items-center justify-center text-[#9290C3]">
+                <Users size={28} />
               </div>
               <div>
-                <h2 className="text-3xl font-black text-[#070F2B] dark:text-white tracking-tighter   italic">
-                  ADD <span className="text-[#535C91]">MEMBERS</span>
+                <h2 className="text-2xl font-black text-[#070F2B] dark:text-white uppercase italic tracking-tighter">
+                  Add <span className="text-[#535C91]">Members</span>
                 </h2>
-                <div className="mt-3">
-                  <div className="flex justify-between mb-1.5">
-                    <span className="text-[10px] font-black text-[#535C91] dark:text-[#9290C3]/60   tracking-widest">
-                      Team Capacity
-                    </span>
-                    <span className="text-[10px] font-black text-[#1B1A55] dark:text-[#9290C3]   tracking-widest">
-                      {teamCount} / {employeeLimit} Slots
-                    </span>
-                  </div>
-                  <div className="w-64 h-3 bg-gray-100 dark:bg-[#070F2B] rounded-full overflow-hidden border border-gray-50 dark:border-[#535C91]/20">
+                <div className="mt-2 flex items-center gap-3">
+                  <div className="w-32 h-2 bg-gray-100 dark:bg-[#070F2B] rounded-full overflow-hidden border border-gray-50 dark:border-[#535C91]/20">
                     <div
-                      className={`h-full rounded-full transition-all duration-1000 ${teamCount >= employeeLimit ? "bg-rose-500" : "bg-[#535C91]"}`}
+                      className={`h-full ${teamCount >= employeeLimit ? "bg-rose-500" : "bg-[#535C91]"}`}
                       style={{ width: `${(teamCount / employeeLimit) * 100}%` }}
                     ></div>
                   </div>
+                  <span className="text-[9px] font-black text-[#1B1A55] dark:text-[#9290C3] uppercase italic">
+                    {teamCount}/{employeeLimit} Slots
+                  </span>
                 </div>
               </div>
             </div>
             <Link
               to="/upgrade-package"
-              className="group flex items-center gap-3 bg-[#1B1A55] hover:bg-[#535C91] text-white px-6 py-4 rounded-2xl font-black transition-all border border-[#535C91]/40   text-[10px] tracking-widest shadow-lg active:scale-95"
+              className="flex items-center gap-2 bg-[#1B1A55] text-white px-5 py-3 rounded-xl font-black text-[9px] uppercase italic tracking-widest border border-[#535C91]/40"
             >
-              <Crown size={18} className="text-[#9290C3]" /> Upgrade Plan
+              <Crown size={14} /> Upgrade Plan
             </Link>
           </div>
         </div>
 
-        {/* Join Requests Section */}
+        {/* Join Requests */}
         {pendingRequests.length > 0 && (
-          <div className=" bg-gray-50 dark:bg-[#1B1A55]/5 rounded-[2.5rem] p-5 border border-gray-100 dark:border-[#535C91]/20 shadow-sm">
-            <div className="flex items-center gap-2 mb-8 text-[#535C91]">
-              <div className="p-2 bg-[#1B1A55]/10 dark:bg-[#1B1A55] rounded-xl">
-                <UserPlus size={20} className="text-[#9290C3]" />
-              </div>
-              <h3 className="text-xs font-black   tracking-widest text-[#070F2B] dark:text-[#9290C3]">
-                Join Requests ({pendingRequests.length})
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mb-8 bg-gray-50 dark:bg-[#1B1A55]/5 p-6 rounded-[2rem] border border-[#535C91]/10">
+            <h3 className="text-[9px] font-black tracking-[0.3em] uppercase italic text-[#535C91] mb-6">
+              Pending Join Requests ({pendingRequests.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 cursor-pointer">
               {pendingRequests.map((req) => (
                 <div
                   key={req._id}
-                  className="p-2 bg-white dark:bg-[#070F2B] rounded-3xl border border-gray-100 dark:border-[#535C91]/30 flex items-center justify-between group hover:border-[#9290C3]/50 transition-all shadow-sm"
+                  className="p-3 bg-white dark:bg-[#070F2B] rounded-2xl border border-gray-100 dark:border-[#535C91]/20 flex items-center justify-between group"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
                     <img
-                      src={
-                        req.photo ||
-                        req.employeePhoto ||
-                        "https://i.ibb.co/mJR7z1C/avatar.png"
-                      }
-                      className="w-12 h-12 rounded-2xl object-cover ring-2 ring-transparent group-hover:ring-[#535C91]"
+                      src={req.photo || "https://i.ibb.co/mJR7z1C/avatar.png"}
+                      className="w-10 h-10 rounded-lg object-cover"
                     />
                     <div className="min-w-0">
-                      <p className="font-black text-[#070F2B] dark:text-white text-xs truncate   tracking-tight">
+                      <p className="font-black text-[#070F2B] dark:text-white text-[10px] uppercase italic truncate">
                         {req.name || req.employeeName}
                       </p>
-                      <p className="text-[9px] text-[#535C91] font-bold truncate  ">
+                      <p className="text-[8px] text-[#535C91] font-black truncate opacity-60 lowercase">
                         {req.email}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleApprove(req)}
-                    className="p-3 bg-[#1B1A55] hover:bg-[#535C91] text-white rounded-xl shadow-lg transition-all active:scale-95"
-                    title="Approve Member"
+                    className="p-2 bg-[#1B1A55] text-white rounded-lg hover:bg-[#535C91] transition-all"
                   >
-                    <CheckCircle size={18} className="text-[#9290C3]" />
+                    <CheckCircle size={14} />
                   </button>
                 </div>
               ))}
@@ -267,116 +224,97 @@ const AddEmployee = () => {
           </div>
         )}
 
-        {/* Main Action Area (Bulk Add) */}
-        <div className="bg-white dark:bg-[#1B1A55]/10 mt-4 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-[#535C91]/20 overflow-hidden">
-          <div className="p-6 md:p-8 bg-gray-50/50 dark:bg-[#1B1A55]/40 border-b border-gray-100 dark:border-[#535C91]/20 flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="relative w-full md:w-96">
+        {/* Bulk Area */}
+        <div className="bg-white dark:bg-transparent rounded-[2rem] border border-gray-100 dark:border-[#535C91]/10 overflow-hidden shadow-sm">
+          <div className="p-5 bg-gray-50/50 dark:bg-[#1B1A55]/20 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-100 dark:border-[#535C91]/10">
+            <div className="relative w-full md:w-80">
               <Search
-                className="absolute top-1/2 -translate-y-1/2 left-5 text-[#535C91]"
-                size={20}
+                className="absolute top-1/2 -translate-y-1/2 left-4 text-[#535C91]"
+                size={16}
               />
               <input
                 type="text"
-                placeholder="Search by name or email..."
                 value={displaySearch}
-                className="w-full pl-14 pr-12 h-16 bg-white dark:bg-[#070F2B] border border-gray-200 dark:border-[#535C91]/30 text-[#070F2B] dark:text-white rounded-2xl focus:ring-2 focus:ring-[#9290C3] outline-none font-bold transition-all placeholder:text-[#535C91]/40"
+                className="w-full pl-12 pr-4 h-12 bg-white dark:bg-[#070F2B] border border-gray-100 dark:border-[#535C91]/20 text-white rounded-xl outline-none font-black text-[9px] uppercase italic tracking-widest transition-all"
                 onChange={(e) => setDisplaySearch(e.target.value)}
               />
             </div>
             <button
               onClick={handleBulkAdd}
               disabled={selectedEmployees.length === 0}
-              className="w-full md:w-auto flex items-center justify-center gap-3 bg-[#1B1A55] dark:bg-[#1B1A55] hover:bg-[#535C91] disabled:bg-gray-200 dark:disabled:bg-[#070F2B] disabled:text-gray-400 text-white px-10 h-16 rounded-2xl font-black   tracking-widest text-[10px] transition-all shadow-xl active:scale-95 border border-[#535C91]/20"
+              className="h-12 px-6 bg-[#1B1A55] text-white rounded-xl font-black text-[9px] uppercase italic tracking-widest disabled:opacity-30 flex items-center gap-2 cursor-pointer"
             >
-              <UserPlus size={18} className="text-[#9290C3]" /> Add Selected (
-              {selectedEmployees.length})
+              Add Member ({selectedEmployees.length}) <ArrowRight size={14} />
             </button>
           </div>
 
-          <div className="overflow-x-auto min-h-100">
-            {isLoading && availableEmployees.length === 0 ? (
-              <div className="flex flex-col justify-center items-center py-32 space-y-4">
-                <Loader2 className="animate-spin text-[#535C91] w-12 h-12" />
-              </div>
-            ) : (
+          <div className="overflow-x-auto no-scrollbar">
+            <div className="min-w-[800px]">
               <table
-                className={`table w-full ${isFetching ? "opacity-40" : ""}`}
+                className={`w-full text-left ${isFetching ? "opacity-40" : ""}`}
               >
                 <thead>
-                  <tr className="bg-gray-50/50 dark:bg-[#1B1A55]/20">
-                    <th className="py-6 pl-10 text-[10px] font-black   tracking-widest text-[#535C91]">
-                      Select
-                    </th>
-                    <th className="py-6 text-[10px] font-black   tracking-widest text-[#535C91]">
-                      Candidate Info
-                    </th>
-                    <th className="py-6 pr-10 text-[10px] font-black   tracking-widest text-[#535C91] text-right">
-                      Status
-                    </th>
+                  <tr className="bg-gray-50/50 dark:bg-[#070F2B] text-[#535C91] text-[8px] font-black tracking-[0.3em] uppercase italic border-b border-gray-100 dark:border-[#535C91]/10">
+                    <th className="py-5 pl-10 w-24">Select</th>
+                    <th className="py-5">Member</th>
+                    <th className="py-5 pr-10 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-[#535C91]/10">
+                <tbody className="divide-y divide-gray-50 dark:divide-[#535C91]/5">
                   {availableEmployees.map((emp) => (
                     <tr
                       key={emp._id}
-                      className="group hover:bg-gray-50 dark:hover:bg-[#1B1A55]/30 transition-all"
+                      className="group hover:bg-gray-50 dark:hover:bg-[#1B1A55]/10 transition-all"
                     >
-                      <td className="py-6 pl-10">
-                        <input
-                          type="checkbox"
-                          className="w-6 h-6 rounded-lg border-2 border-[#535C91]/30 bg-transparent text-[#1B1A55] cursor-pointer focus:ring-[#9290C3]"
-                          checked={selectedEmployees.includes(emp._id)}
-                          onChange={() => handleSelect(emp._id)}
-                        />
-                      </td>
-                      <td className="py-6 flex items-center gap-4">
-                        <img
-                          src={
-                            emp.photo ||
-                            emp.image ||
-                            "https://i.ibb.co/mJR7z1C/avatar.png"
-                          }
-                          className="w-12 h-12 rounded-xl object-cover border border-gray-100 dark:border-[#535C91]/30 shadow-sm"
-                        />
-                        <div>
-                          <p className="font-black text-[#070F2B] dark:text-white   text-sm tracking-tight">
-                            {emp.name}
-                          </p>
-                          <p className="text-[10px] font-bold text-[#535C91] dark:text-[#9290C3]/60 lowercase italic">
-                            {emp.email}
-                          </p>
+                      <td className="py-5 pl-10">
+                        <div
+                          onClick={() => handleSelect(emp._id)}
+                          className={`w-6 h-6 rounded-lg border flex items-center justify-center cursor-pointer ${selectedEmployees.includes(emp._id) ? "bg-[#535C91] border-[#535C91]" : "border-[#535C91]/30"}`}
+                        >
+                          {selectedEmployees.includes(emp._id) && (
+                            <CheckCircle size={12} className="text-white" />
+                          )}
                         </div>
                       </td>
-                      <td className="py-6 pr-10 text-right">
+                      <td className="py-5">
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={
+                              emp.photo || "https://i.ibb.co/mJR7z1C/avatar.png"
+                            }
+                            className="w-10 h-10 rounded-xl object-cover"
+                          />
+                          <div>
+                            <p className="font-black text-[#070F2B] dark:text-white text-[10px] uppercase italic tracking-widest">
+                              {emp.name}
+                            </p>
+                            <p className="text-[8px] font-black text-[#535C91] uppercase italic opacity-60">
+                              {emp.email}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-5 pr-10 text-right">
                         <button
                           onClick={() => handleSelect(emp._id)}
-                          className={`px-6 py-2 rounded-xl text-[10px] font-black   tracking-widest transition-all ${selectedEmployees.includes(emp._id) ? "bg-rose-500 text-white shadow-lg" : "bg-white dark:bg-[#070F2B] text-[#1B1A55] dark:text-[#9290C3] border border-[#535C91]/40 hover:bg-[#1B1A55] hover:text-white"}`}
+                          className={`px-4 py-2 rounded-lg text-[8px] font-black uppercase italic tracking-widest border ${selectedEmployees.includes(emp._id) ? "bg-rose-500 text-white border-rose-500" : "bg-transparent text-[#535C91] border-[#535C91]/20 cursor-pointer"}`}
                         >
                           {selectedEmployees.includes(emp._id)
                             ? "Deselect"
-                            : "Select"}
+                            : "Select Candidate"}
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-            )}
-            {!isLoading && availableEmployees.length === 0 && (
-              <div className="text-center py-32">
-                <UserCheck
-                  size={32}
-                  className="mx-auto text-gray-200 dark:text-[#535C91]/30"
-                />
-                <p className="text-[#535C91] dark:text-[#9290C3]/30 font-black   text-[10px] mt-2 tracking-widest">
-                  No candidates found
-                </p>
-              </div>
-            )}
+            </div>
           </div>
         </div>
-        <div className="mt-8 text-center text-[#535C91] dark:text-[#9290C3]/40 text-[10px] font-black   tracking-[0.2em] flex items-center justify-center gap-2">
-          <AlertCircle size={14} /> You have {remainingSlots} slots remaining.
+
+        <div className="mt-8 text-center text-[#535C91] dark:text-[#9290C3]/40 text-[8px] font-black tracking-[0.3em] uppercase italic flex items-center justify-center gap-2">
+          <AlertCircle size={12} /> Status: {remainingSlots} protocol slots
+          available
         </div>
       </div>
     </div>

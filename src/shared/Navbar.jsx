@@ -1,6 +1,8 @@
 import { useState, useEffect, useContext } from "react";
 import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import useAuth from "../hooks/UseAuth";
+import useAxiosSecure from "../hooks/useAxiosSecure";
 import UseRole from "../hooks/UseRole";
 import { ThemeContext } from "../hooks/ThemeContext";
 import Swal from "sweetalert2";
@@ -25,11 +27,26 @@ import {
 const Navbar = () => {
   const { isDark, toggleTheme } = useContext(ThemeContext);
   const { user, logOut } = useAuth();
+  const axiosSecure = useAxiosSecure();
   const [role] = UseRole();
   const [isOpen, setIsOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // --- Notification Data Fetching ---
+  const { data: stats = {} } = useQuery({
+    queryKey: ["hr-stats", user?.email],
+    enabled: !!user?.email && role === "hr",
+    queryFn: async () => {
+      const res = await axiosSecure.get(`/hr-stats/${user?.email}`);
+      return res.data;
+    },
+    refetchInterval: 5000, 
+  });
+
+  const pendingCount = stats.pendingRequests?.length || 0;
+  
 
   useEffect(() => {
     setIsOpen(false);
@@ -52,7 +69,6 @@ const Navbar = () => {
       .catch((error) => console.log(error));
   };
 
-  // Styles for consistency with Enterprise Theme
   const linkStyle =
     "flex items-center gap-2 px-4 py-2 text-[10px] font-black tracking-widest uppercase italic text-gray-500 dark:text-[#9290C3]/70 hover:text-[#1B1A55] dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1B1A55]/40 rounded-xl transition-all duration-300 no-underline";
   const activeStyle =
@@ -112,9 +128,17 @@ const Navbar = () => {
           <li>
             <NavLink
               to="/all-requests"
-              className={({ isActive }) => (isActive ? activeStyle : linkStyle)}
+              className={({ isActive }) =>
+                `relative ${isActive ? activeStyle : linkStyle}`
+              }
             >
               <GitPullRequest size={14} /> Requests
+              {/* Notification Badge */}
+              {pendingCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[8px] font-black text-white animate-bounce shadow-md border border-white dark:border-[#070F2B]">
+                  {pendingCount}
+                </span>
+              )}
             </NavLink>
           </li>
           <li>
@@ -244,7 +268,7 @@ const Navbar = () => {
                   <div className="h-px bg-gray-100 dark:bg-[#1B1A55] my-2 mx-2" />
                   <button
                     onClick={handleLogOut}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 text-[10px] font-black tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all uppercase italic"
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-[10px] font-black tracking-widest text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all uppercase italic cursor-pointer"
                   >
                     <LogOut size={16} /> Logout
                   </button>

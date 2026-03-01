@@ -7,28 +7,54 @@ import {
   UserMinus,
   Search,
   Loader2,
-  UserPlus,
   CheckCircle,
   Calendar,
-  Briefcase,
-  Users,
   PackagePlus,
+  ArrowRight,
+  Users,
 } from "lucide-react";
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, memo, useCallback } from "react";
+
+
+const SearchField = memo(({ onSearch }) => {
+  const [localText, setLocalText] = useState("");
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      onSearch(localText);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [localText, onSearch]);
+
+  return (
+    <div className="relative w-full lg:w-96">
+      <Search
+        className="absolute top-1/2 -translate-y-1/2 left-6 text-[#535C91]"
+        size={18}
+      />
+      <input
+        type="text"
+        className="w-full pl-16 pr-6 h-16 bg-gray-50 dark:bg-[#1B1A55]/10 border border-gray-100 dark:border-[#535C91]/20 text-[#070F2B] dark:text-white rounded-2xl outline-none focus:ring-1 focus:ring-[#9290C3] text-[11px] font-black uppercase italic tracking-widest transition-all"
+        value={localText}
+        onChange={(e) => setLocalText(e.target.value)}
+      />
+    </div>
+  );
+});
 
 const MyEmployeeList = () => {
   const { user } = useAuth();
   const axiosSecure = useAxiosSecure();
   const { isDark } = useContext(ThemeContext);
-  const [search, setSearch] = useState("");
+
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedSearch(search), 500);
-    return () => clearTimeout(handler);
-  }, [search]);
+  const handleSearch = useCallback((text) => {
+    setDebouncedSearch(text);
+  }, []);
 
+  // Assets Query
   const { data: myAssets = [] } = useQuery({
     queryKey: ["my-assets-list", user?.email],
     enabled: !!user?.email,
@@ -38,6 +64,7 @@ const MyEmployeeList = () => {
     },
   });
 
+  // Pending Requests Query
   const { data: pendingRequests = [], refetch: refetchPending } = useQuery({
     queryKey: ["pending-requests", user?.email],
     enabled: !!user?.email,
@@ -49,10 +76,12 @@ const MyEmployeeList = () => {
     },
   });
 
+  // Main Employees Query
   const {
     data: employees = [],
     refetch: refetchMembers,
     isLoading,
+    isFetching,
   } = useQuery({
     queryKey: ["my-employees", user?.email, debouncedSearch],
     enabled: !!user?.email,
@@ -62,13 +91,59 @@ const MyEmployeeList = () => {
       );
       return res.data;
     },
+    placeholderData: (prev) => prev,
   });
+
+  // Action Handlers (Approve, Remove, Assign)
+  const handleApprove = async (emp) => {
+    try {
+      const res = await axiosSecure.patch(
+        `/users/approve-request/${emp.email}`,
+        { hrEmail: user?.email },
+      );
+      if (res.data.modifiedCount > 0) {
+        Swal.fire({
+          icon: "success",
+          title: "ACCESS GRANTED",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+        refetchPending();
+        refetchMembers();
+      }
+    } catch (error) {
+      Swal.fire({ icon: "error", title: "Action Failed" });
+    }
+  };
+
+  const handleRemove = (id) => {
+    Swal.fire({
+      title: `REMOVE ACCESS?`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#1B1A55",
+      confirmButtonText: "YES, REMOVE",
+      background: isDark ? "#070F2B" : "#fff",
+      color: isDark ? "#9290C3" : "#070F2B",
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const res = await axiosSecure.patch(`/employees/remove/${id}`);
+          if (res.data.modifiedCount > 0) {
+            Swal.fire({ title: "REMOVED", icon: "success" });
+            refetchMembers();
+          }
+        } catch (error) {
+          Swal.fire({ icon: "error", title: "Error" });
+        }
+      }
+    });
+  };
 
   const handleAssignSubmit = async (e) => {
     e.preventDefault();
     const assetId = e.target.asset.value;
     const asset = myAssets.find((a) => a._id === assetId);
-
     const assignData = {
       assetId: asset._id,
       productName: asset.productName,
@@ -77,162 +152,81 @@ const MyEmployeeList = () => {
       userName: selectedEmployee.name,
       hrEmail: user?.email.toLowerCase(),
     };
-
     try {
       const res = await axiosSecure.post("/assign-asset", assignData);
       if (res.data.insertedId) {
         Swal.fire({
           icon: "success",
-          title: "Asset Assigned!",
-          text: `${asset.productName} assigned to ${selectedEmployee.name}`,
+          title: "ASSET DEPLOYED",
           background: isDark ? "#070F2B" : "#fff",
           color: isDark ? "#9290C3" : "#070F2B",
-          confirmButtonColor: "#1B1A55",
         });
         document.getElementById("assign_modal").close();
         refetchMembers();
       }
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Failed to Assign",
-        background: isDark ? "#070F2B" : "#fff",
-        color: isDark ? "#9290C3" : "#070F2B",
-      });
+      Swal.fire({ icon: "error", title: "DEPLOYMENT FAILED" });
     }
   };
 
-  const handleApprove = async (emp) => {
-    try {
-      const res = await axiosSecure.patch(
-        `/users/approve-request/${emp.email}`,
-        {
-          hrEmail: user?.email,
-        },
-      );
-      if (res.data.modifiedCount > 0) {
-        Swal.fire({
-          icon: "success",
-          title: "Employee Added!",
-          showConfirmButton: false,
-          timer: 1500,
-          background: isDark ? "#070F2B" : "#fff",
-          color: isDark ? "#9290C3" : "#070F2B",
-        });
-        refetchPending();
-        refetchMembers();
-      }
-    } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "Action Failed",
-        text: error.response?.data?.message || "Error occurred",
-        background: isDark ? "#070F2B" : "#fff",
-        color: isDark ? "#9290C3" : "#070F2B",
-      });
-    }
-  };
-
-  const handleRemove = (id) => {
-    Swal.fire({
-      title: `Remove from Team?`,
-      text: "This employee will lose access to all company assets.",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#1B1A55",
-      cancelButtonColor: "#535C91",
-      confirmButtonText: "Yes, Remove Member",
-      background: isDark ? "#070F2B" : "#fff",
-      color: isDark ? "#9290C3" : "#070F2B",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const res = await axiosSecure.patch(`/employees/remove/${id}`);
-          if (res.data.modifiedCount > 0) {
-            Swal.fire({
-              title: "Removed!",
-              text: "Member has been removed.",
-              icon: "success",
-              background: isDark ? "#070F2B" : "#fff",
-              color: isDark ? "#9290C3" : "#070F2B",
-            });
-            refetchMembers();
-          }
-        } catch (error) {
-          Swal.fire({
-            title: "Error",
-            text: "Action failed.",
-            icon: "error",
-            background: isDark ? "#070F2B" : "#fff",
-            color: isDark ? "#9290C3" : "#070F2B",
-          });
-        }
-      }
-    });
-  };
+  if (isLoading)
+    return (
+      <div className="flex flex-col justify-center items-center min-h-screen bg-white dark:bg-[#070F2B]">
+        <Loader2 className="animate-spin text-[#535C91] w-12 h-12" />
+        <p className="mt-4 font-black text-[#535C91] tracking-[0.4em] text-[10px] uppercase italic">
+          Loading Team...
+        </p>
+      </div>
+    );
 
   return (
-    <div className="p-4 md:p-10 pt-28 min-h-screen bg-white dark:bg-[#070F2B] transition-colors duration-300">
+    <div className="p-4 md:p-12 pt-28 min-h-screen bg-white dark:bg-[#070F2B] transition-colors duration-300">
       <div className="max-w-7xl mx-auto">
         {/* Header Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-10 gap-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end mb-12 gap-8">
           <div>
-            <h2 className="text-4xl font-black text-[#070F2B] dark:text-white   tracking-tighter italic">
-              Manage Team <span className="text-[#535C91]">Members</span>
+            <h2 className="text-4xl md:text-5xl font-black text-[#070F2B] dark:text-white tracking-tighter uppercase italic">
+              Team <span className="text-[#535C91]">Registry</span>
             </h2>
-            <p className="text-[#535C91] dark:text-[#9290C3]/60 text-sm font-medium mt-1">
-              Manage and monitor active team members.
+            <p className="text-[10px] font-black text-[#535C91] tracking-[0.3em] uppercase italic mt-2">
+              Active Personal Management
             </p>
           </div>
-          <div className="relative w-full lg:w-96">
-            <Search
-              className="absolute top-1/2 -translate-y-1/2 left-5 text-[#535C91]"
-              size={20}
-            />
-            <input
-              type="text"
-              className="w-full pl-14 pr-6 h-16 bg-gray-50 dark:bg-[#1B1A55]/20 border border-gray-100 dark:border-[#535C91]/30 text-[#070F2B] dark:text-white rounded-2xl shadow-sm focus:ring-2 focus:ring-[#9290C3] outline-none transition-all "
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
+          <SearchField onSearch={handleSearch} />
         </div>
 
-        {/* Pending Requests */}
+        {/* Pending Join Requests */}
         {pendingRequests.length > 0 && (
-          <div className=" bg-gray-50 dark:bg-[#1B1A55]/10 p-5 rounded-[2.5rem] border border-[#535C91]/20">
-            <div className="flex items-center gap-2 mb-6 text-[#535C91]">
-              <UserPlus size={20} />
-              <h3 className="text-[10px] font-black   tracking-widest">
-                Join Requests ({pendingRequests.length})
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="mb-12 bg-gray-50 dark:bg-[#1B1A55]/10 p-4 rounded-[2.5rem] border border-[#535C91]/10">
+            <h3 className="text-[9px] font-black tracking-[0.4em] uppercase italic text-[#535C91] mb-3 ml-2">
+              Join Request ({pendingRequests.length})
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 cursor-pointer">
               {pendingRequests.map((req) => (
                 <div
                   key={req._id}
-                  className="bg-white dark:bg-[#070F2B] p-2 rounded-3xl border border-gray-100 dark:border-[#535C91]/30 shadow-sm flex items-center justify-between group hover:border-[#9290C3]/50 transition-all"
+                  className="bg-white dark:bg-[#070F2B] p-2 pr-4 rounded-[1.5rem] border border-gray-100 dark:border-[#535C91]/20 shadow-sm flex items-center justify-between group"
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <img
                       src={req.photo || "https://i.ibb.co/mJR7z1C/avatar.png"}
-                      className="w-12 h-12 rounded-2xl object-cover ring-2 ring-transparent group-hover:ring-[#535C91] transition-all"
+                      className="w-10 h-10 rounded-xl object-cover grayscale group-hover:grayscale-0 transition-all"
                       alt=""
                     />
                     <div className="min-w-0">
-                      <p className="font-black text-[#070F2B] dark:text-white text-xs truncate  ">
+                      <p className="font-black text-[#070F2B] dark:text-white text-[10px] uppercase italic truncate">
                         {req.name || req.employeeName}
                       </p>
-                      <p className="text-[9px] text-[#535C91] font-bold truncate">
+                      <p className="text-[9px] text-[#535C91] font-black tracking-tighter truncate opacity-60 italic">
                         {req.email}
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => handleApprove(req)}
-                    className="p-3 bg-[#1B1A55] hover:bg-[#535C91] text-white rounded-xl shadow-lg transition-all active:scale-95 border border-[#535C91]/30"
+                    className="w-8 h-8 bg-[#1B1A55] text-white rounded-lg flex items-center justify-center hover:bg-emerald-600 transition-all active:scale-90 shadow-lg"
                   >
-                    <CheckCircle size={15} />
+                    <CheckCircle size={14} />
                   </button>
                 </div>
               ))}
@@ -240,160 +234,145 @@ const MyEmployeeList = () => {
           </div>
         )}
 
-        {/* Main Table */}
-        <div className="bg-white dark:bg-[#1B1A55]/10 rounded-[2.5rem] shadow-sm border border-gray-100 dark:border-[#535C91]/20 overflow-hidden">
-          <div className="overflow-x-auto">
-            {isLoading ? (
-              <div className="flex justify-center items-center py-32">
-                <Loader2 className="animate-spin text-[#535C91] w-12 h-12" />
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50/50 dark:bg-[#1B1A55]/40 text-[#535C91] dark:text-[#9290C3]/40 text-[10px]   font-black tracking-widest border-b border-gray-100 dark:border-[#535C91]/20">
-                    <th className="py-7 pl-10">Member Info</th>
-                    <th className="py-7">Email Address</th>
-                    <th className="py-7">Join Date</th>
-                    <th className="py-7 text-center">Assign</th>
-                    <th className="py-7 pr-10 text-right">Action</th>
+        {/* Main Employee Table */}
+        <div className="w-full overflow-x-auto no-scrollbar rounded-[2.5rem] border border-gray-100 dark:border-[#535C91]/10 shadow-sm bg-white dark:bg-transparent">
+          <div className="min-w-[900px]">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50/50 dark:bg-[#1B1A55]/40 text-[#535C91] text-[9px] font-black tracking-[0.4em] uppercase italic border-b border-gray-100 dark:border-[#535C91]/10">
+                  <th className="py-8 pl-12">Name</th>
+                  <th className="py-8">Email</th>
+                  <th className="py-8">Registry Date</th>
+                  <th className="py-8 text-center">Deploy Asset</th>
+                  <th className="py-8 pr-12 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50 dark:divide-[#535C91]/5">
+                
+                {employees.length === 0 && !isLoading ? (
+                  <tr>
+                    <td colSpan="5" className="py-24 text-center">
+                      <div className="flex flex-col items-center gap-4 opacity-40">
+                        <Users size={48} className="text-[#535C91]" />
+                        <p className="text-[12px] font-black uppercase italic tracking-[0.5em] text-[#535C91]">
+                          No Member Found
+                        </p>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {employees.map((emp) => (
+                ) : (
+                  employees.map((emp) => (
                     <tr
                       key={emp._id}
-                      className="group hover:bg-gray-50 dark:hover:bg-[#1B1A55]/20 transition-all border-b border-gray-50 dark:border-[#535C91]/10 last:border-0"
+                      className="group hover:bg-gray-50 dark:hover:bg-[#1B1A55]/10 transition-all"
                     >
-                      <td className="py-6 pl-10">
+                      <td className="py-8 pl-12">
                         <div className="flex items-center gap-4">
                           <img
                             src={
                               emp.photo || "https://i.ibb.co/mJR7z1C/avatar.png"
                             }
-                            className="w-12 h-12 rounded-2xl object-cover shadow-sm group-hover:scale-105 transition-transform"
+                            className="w-10 h-10 rounded-xl object-cover shadow-md group-hover:scale-110 transition-transform"
                             alt=""
                           />
                           <div>
-                            <p className="font-black text-[#070F2B] dark:text-white   text-sm tracking-tight">
+                            <p className="font-black text-[#070F2B] dark:text-white text-[11px] uppercase italic tracking-widest">
                               {emp.name}
                             </p>
-                            <span className="text-[9px] font-black   bg-[#1B1A55] text-white px-2 py-0.5 rounded-md">
-                              Active
+                            <span className="text-[8px] font-black text-emerald-500 uppercase italic">
+                               Active
                             </span>
                           </div>
                         </div>
                       </td>
-                      <td className="py-6">
-                        <p className="text-[#535C91] dark:text-[#9290C3]/60 font-bold text-xs">
+                      <td className="py-8">
+                        <p className="text-[#535C91] dark:text-[#9290C3]/60 font-black text-[10px] italic">
                           {emp.email}
                         </p>
                       </td>
-                      <td className="py-6">
+                      <td className="py-8">
                         <div className="flex items-center gap-2 text-[#535C91] dark:text-[#9290C3]/40">
-                          <Calendar size={14} />
-                          <span className="text-xs font-black   tracking-tighter">
+                          <Calendar size={14} className="opacity-40" />
+                          <span className="text-[10px] font-black uppercase italic">
                             {emp.joinedDate || "N/A"}
                           </span>
                         </div>
                       </td>
-
-                      <td className="py-6 text-center">
+                      <td className="py-8 text-center">
                         <button
                           onClick={() => {
                             setSelectedEmployee(emp);
                             document.getElementById("assign_modal").showModal();
                           }}
-                          className="p-3 bg-gray-50 dark:bg-[#070F2B] text-[#1B1A55] dark:text-[#9290C3] rounded-xl hover:bg-[#1B1A55] hover:text-white transition-all shadow-sm border border-[#535C91]/20"
-                          title="Assign Asset Directly"
+                          className="w-11 h-11 mx-auto bg-gray-50 dark:bg-[#070F2B] text-[#1B1A55] dark:text-[#9290C3] rounded-xl hover:bg-[#1B1A55] hover:text-white transition-all shadow-sm border border-gray-200 dark:border-[#535C91]/20 flex items-center justify-center active:scale-90 cursor-pointer"
                         >
                           <PackagePlus size={18} />
                         </button>
                       </td>
-                      <td className="py-6 pr-10 text-right">
+                      <td className="py-8 pr-12 text-right">
                         <button
                           onClick={() => handleRemove(emp._id)}
-                          className="inline-flex items-center gap-2 text-[#535C91] hover:text-rose-500 font-black   text-[10px] tracking-widest transition-all p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl"
+                          className="p-3 text-[#535C91] hover:text-rose-500 transition-all active:scale-90 cursor-pointer"
                         >
-                          <UserMinus size={18} />
-                          <span className="hidden sm:inline">Remove</span>
+                          <UserMinus size={20} />
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-
-            {!isLoading && employees.length === 0 && (
-              <div className="text-center py-32">
-                <Users
-                  size={48}
-                  className="mx-auto text-gray-200 dark:text-[#535C91]/30 mb-4"
-                />
-                <p className="text-[#535C91] dark:text-[#9290C3]/30 font-black   text-xs tracking-widest">
-                  No team members found
-                </p>
-              </div>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
 
-      {/* ASSIGN ASSET MODAL */}
-      <dialog id="assign_modal" className="modal backdrop-blur-sm">
-        <div className="modal-box rounded-[2.5rem] bg-white dark:bg-[#070F2B] p-10 border border-gray-100 dark:border-[#535C91]/30 shadow-2xl">
-          <h3 className="text-2xl font-black text-[#070F2B] dark:text-white   italic tracking-tighter mb-2">
-            Assign <span className="text-[#535C91]">Asset</span>
-          </h3>
-          <p className="text-[10px] font-black text-[#535C91]   tracking-[0.2em] mb-8">
-            Directly assign to:{" "}
-            <span className="text-[#9290C3]">{selectedEmployee?.name}</span>
-          </p>
-
+      {/* Deploy Asset Modal */}
+      <dialog id="assign_modal" className="modal backdrop-blur-md">
+        <div className="modal-box rounded-[2.5rem] bg-white dark:bg-[#070F2B] p-10 border border-gray-100 dark:border-[#535C91]/30 shadow-2xl relative">
+          <div className="mb-8">
+            <h3 className="text-2xl font-black text-[#070F2B] dark:text-white italic tracking-tighter uppercase leading-none">
+              Deploy <span className="text-[#535C91]">Asset</span>
+            </h3>
+            <p className="text-[9px] font-black text-[#535C91] tracking-[0.3em] uppercase italic mt-2">
+              Target: {selectedEmployee?.name}
+            </p>
+          </div>
           <form onSubmit={handleAssignSubmit} className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black   text-[#535C91] dark:text-[#9290C3]/50 ml-2">
-                Select Asset from Inventory
+              <label className="text-[8px] font-black text-[#535C91] uppercase tracking-[0.4em] ml-1 italic">
+                Inventory Selection
               </label>
               <select
                 name="asset"
-                className="w-full h-14 bg-gray-50 dark:bg-[#1B1A55]/30 border border-transparent dark:border-[#535C91]/20 dark:text-white rounded-2xl px-6 outline-none font-bold text-sm transition-all focus:ring-2 focus:ring-[#9290C3]"
+                className="w-full h-14 bg-gray-50 dark:bg-[#1B1A55]/30 border border-gray-100 dark:border-[#535C91]/20 dark:text-white rounded-xl px-6 outline-none font-black text-[10px] uppercase italic focus:ring-1 focus:ring-[#9290C3]"
                 required
               >
                 <option value="" disabled selected>
-                  Choose an asset...
+                  SELECT ASSET...
                 </option>
                 {myAssets
                   .filter((a) => a.productQuantity > 0)
                   .map((asset) => (
                     <option
-                      className="dark:bg-[#070F2B]"
+                      className="bg-white dark:bg-[#070F2B] py-3"
                       key={asset._id}
                       value={asset._id}
                     >
-                      {asset.productName} ({asset.productQuantity} left)
+                      {asset.productName.toUpperCase()} — (
+                      {asset.productQuantity} UNITS)
                     </option>
                   ))}
               </select>
             </div>
-            <div className="flex gap-4 pt-4">
-              <button
-                type="submit"
-                className="flex-grow h-14 bg-[#1B1A55] text-white rounded-2xl font-black   text-xs tracking-widest shadow-xl hover:bg-[#535C91] transition-all active:scale-95 border border-[#535C91]/30"
-              >
-                Assign Now
-              </button>
-              <button
-                type="button"
-                onClick={() => document.getElementById("assign_modal").close()}
-                className="px-8 h-14 bg-gray-100 dark:bg-[#1B1A55]/20 text-[#535C91] rounded-2xl font-black   text-xs tracking-widest"
-              >
-                Cancel
-              </button>
-            </div>
+            <button
+              type="submit"
+              className="w-full h-14 bg-[#1B1A55] text-white rounded-xl font-black text-[10px] tracking-[0.4em] uppercase italic shadow-lg hover:bg-[#535C91] transition-all flex items-center justify-center gap-3"
+            >
+              Confirm Deployment <ArrowRight size={14} />
+            </button>
           </form>
         </div>
-        <form method="dialog" className="modal-backdrop bg-[#070F2B]/60">
+        <form method="dialog" className="modal-backdrop bg-[#070F2B]/80">
           <button>close</button>
         </form>
       </dialog>

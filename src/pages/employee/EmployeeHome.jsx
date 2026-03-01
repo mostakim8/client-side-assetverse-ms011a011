@@ -109,7 +109,7 @@ const EmployeeHome = () => {
             effect="fade"
             autoplay={{ delay: 5000 }}
             pagination={{ clickable: true }}
-            className="h-[250px] md:h-[320px]"
+            className="h-[60vh]"
           >
             {sliderData.map((slide, idx) => (
               <SwiperSlide key={idx}>
@@ -168,13 +168,13 @@ const EmployeeHome = () => {
 
         {/* STATS & WELCOME GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 mb-8">
-          <div className="lg:col-span-8 bg-[#1B1A55] dark:bg-[#1B1A55]/30 p-8 rounded-[2.5rem] text-white relative overflow-hidden flex flex-col justify-center border border-white/5 shadow-xl">
+          <div className="lg:col-span-8 bg-[#1B1A55] dark:bg-[#1B1A55]/30 p-3 rounded-[2.5rem] text-white relative overflow-hidden flex flex-col justify-center border border-white/5 shadow-xl">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16 blur-3xl"></div>
             <span className="bg-[#535C91] px-3 py-1 rounded-lg text-[8px] font-black uppercase w-fit mb-3 tracking-widest">
               {isJoined ? stats.userData?.companyName : "Independent Member"}
             </span>
             <h2 className="text-3xl md:text-4xl font-black tracking-tighter italic leading-none uppercase">
-              Greetings,{" "}
+              Welcome,{" "}
               <span className="text-[#9290C3]">
                 {user?.displayName?.split(" ")[0]}
               </span>
