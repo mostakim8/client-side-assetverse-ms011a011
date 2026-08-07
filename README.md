@@ -48,20 +48,15 @@ VITE_API_URL=your_backend_server_url
 ## 🚀 How to Run Locally
 Clone the repository:
 
-Bash
+* Bash
 git clone [https://github.com/mostakim8/client-side-assetverse-ms011a011.git](https://github.com/mostakim8/client-side-assetverse-ms011a011.git)
-
-cd client-side-assetverse-ms011a011
+* cd client-side-assetverse-ms011a011
 
 **Install dependencies:**
-
-Bash
-
-npm install
+* Bash
+* npm install
 
 
 **Run the development server:**
-
-Bash
-
-npm run dev
+* Bash
+* npm run dev
