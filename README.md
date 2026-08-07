@@ -42,3 +42,20 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_firebase_messaging_sender_id
 VITE_FIREBASE_APP_ID=your_firebase_app_id
 VITE_STRIPE_PAYMENT_GATEWAY_PK=your_stripe_publishable_key
 VITE_API_URL=your_backend_server_url
+
+---
+
+🚀 How to Run Locally
+Clone the repository:
+
+Bash
+git clone [https://github.com/mostakim8/assetverse-server-side-ms011a011.git](https://github.com/mostakim8/assetverse-server-side-ms011a011.git)
+cd assetverse-server-side-ms011a011
+Install dependencies:
+
+Bash
+npm install
+Start the server:
+
+Bash
+npm start
